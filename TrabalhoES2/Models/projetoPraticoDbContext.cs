@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace TrabalhoES2.Models;
 
-public partial class projetoPraticoDbContext : DbContext
+public partial class projetoPraticoDbContext : IdentityDbContext<IdentityUser, IdentityRole, string>
 {
     public projetoPraticoDbContext()
     {
@@ -35,6 +37,8 @@ public partial class projetoPraticoDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+        
         modelBuilder
             .HasPostgresEnum("tipoativofinanceiro", new[] { "DepositoPrazo", "ImovelArrendado", "FundoInvestimento" })
             .HasPostgresEnum("tipoutilizador", new[] { "Cliente", "Admin", "UserManager" });
@@ -199,6 +203,11 @@ public partial class projetoPraticoDbContext : DbContext
             entity.Property(e => e.Email).HasColumnName("email");
             entity.Property(e => e.Nome).HasColumnName("nome");
             entity.Property(e => e.Password).HasColumnName("password");
+            entity.Property(e => e.TpUtilizador)
+                .HasConversion(
+                    v => v.ToString(),
+                    v => (Utilizador.TipoUtilizador)Enum.Parse(typeof(Utilizador.TipoUtilizador), v));
+            entity.Property(e => e.IdentityUserId).HasColumnName("identity_user_id");
         });
 
         OnModelCreatingPartial(modelBuilder);

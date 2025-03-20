@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TrabalhoES2.Models;
@@ -11,9 +12,11 @@ using TrabalhoES2.Models;
 namespace TrabalhoES2.Migrations
 {
     [DbContext(typeof(projetoPraticoDbContext))]
-    partial class projetoPraticoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250319181752_AddIdentityTables")]
+    partial class AddIdentityTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -469,11 +472,6 @@ namespace TrabalhoES2.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("email");
-
-                    b.Property<string>("IdentityUserId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("identity_user_id");
 
                     b.Property<string>("Nome")
                         .IsRequired()

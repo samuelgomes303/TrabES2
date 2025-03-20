@@ -12,9 +12,7 @@ namespace TrabalhoES2.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterDatabase()
-                .Annotation("Npgsql:Enum:tipoativofinanceiro", "DepositoPrazo,ImovelArrendado,FundoInvestimento")
-                .Annotation("Npgsql:Enum:tipoutilizador", "Cliente,Admin,UserManager");
+          
 
             migrationBuilder.CreateTable(
                 name: "banco",

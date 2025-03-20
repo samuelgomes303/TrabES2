@@ -5,13 +5,22 @@ namespace TrabalhoES2.Models;
 
 public partial class Utilizador
 {
+    public enum TipoUtilizador
+    {
+        Cliente,
+        Admin,
+        UserManager
+    }   
     public int UtilizadorId { get; set; }
 
     public string Nome { get; set; } = null!;
 
     public string Email { get; set; } = null!;
 
-    public string Password { get; set; } = null!;
-
+    public string Password { get; set; } 
+    
+    public TipoUtilizador TpUtilizador { get; set; }
+    
+    public string IdentityUserId { get; set; }
     public virtual ICollection<Carteira> Carteiras { get; set; } = new List<Carteira>();
 }
