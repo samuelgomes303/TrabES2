@@ -208,6 +208,12 @@ public partial class projetoPraticoDbContext : IdentityDbContext<IdentityUser, I
                     v => v.ToString(),
                     v => (Utilizador.TipoUtilizador)Enum.Parse(typeof(Utilizador.TipoUtilizador), v));
             entity.Property(e => e.IdentityUserId).HasColumnName("identity_user_id");
+            
+            entity.HasOne(u => u.IdentityUser)
+                .WithOne()
+                .HasForeignKey<Utilizador>(u => u.IdentityUserId)
+                .HasConstraintName("FK_Utilizador_AspNetUsers")
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         OnModelCreatingPartial(modelBuilder);
