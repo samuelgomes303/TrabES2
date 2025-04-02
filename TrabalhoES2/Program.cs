@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TrabalhoES2.Models;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -10,27 +11,21 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<projetoPraticoDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => 
-    {
-        // Configurações de senha e políticas de usuário
-        options.Password.RequireDigit = true;
-        options.Password.RequiredLength = 6;
-    })
+// Configuração do Identity com chave primária int
+builder.Services.AddIdentity<Utilizador, IdentityRole<int>>()
     .AddEntityFrameworkStores<projetoPraticoDbContext>()
     .AddDefaultTokenProviders();
 
-builder.Services.AddControllersWithViews();
-
 var app = builder.Build();
 
+// Inicialização de roles e usuários
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
-    var context = services.GetRequiredService<projetoPraticoDbContext>();
-    
-    await SeedRoles.InitializeRoles(services, roleManager, userManager, context);
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole<int>>>();
+    var userManager = services.GetRequiredService<UserManager<Utilizador>>();
+
+    await SeedRoles.SeedAsync(services, roleManager, userManager);
 }
 
 // Configure the HTTP request pipeline.

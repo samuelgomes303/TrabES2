@@ -1,29 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
 
-namespace TrabalhoES2.Models;
-
-public partial class Utilizador
+namespace TrabalhoES2.Models
 {
-    public enum TipoUtilizador
+    public partial class Utilizador : IdentityUser<int>
     {
-        Cliente,
-        Admin,
-        UserManager
-    }   
-    public int UtilizadorId { get; set; }
+        public enum TipoUtilizador
+        {
+            Cliente,
+            Admin,
+            UserManager
+        }
+        
+        public string Nome { get; set; } = null!;
 
-    public string Nome { get; set; } = null!;
+        public TipoUtilizador TpUtilizador { get; set; }
 
-    public string Email { get; set; } = null!;
-
-    public string Password { get; set; } 
-    
-    public TipoUtilizador TpUtilizador { get; set; }
-    
-    public string IdentityUserId { get; set; }
-    
-    public IdentityUser IdentityUser { get; set; } 
-    public virtual ICollection<Carteira> Carteiras { get; set; } = new List<Carteira>();
+        public virtual ICollection<Carteira> Carteiras { get; set; } = new List<Carteira>();
+    }
 }

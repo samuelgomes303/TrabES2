@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace TrabalhoES2.Models;
 
-public partial class projetoPraticoDbContext : IdentityDbContext<IdentityUser, IdentityRole, string>
+public partial class projetoPraticoDbContext : IdentityDbContext<Utilizador, IdentityRole<int>, int>
 {
     public projetoPraticoDbContext()
     {
@@ -193,28 +193,25 @@ public partial class projetoPraticoDbContext : IdentityDbContext<IdentityUser, I
 
         modelBuilder.Entity<Utilizador>(entity =>
         {
-            entity.HasKey(e => e.UtilizadorId).HasName("utilizador_pkey");
+            entity.HasKey(e => e.Id); // A chave primária é o Id do IdentityUser<int>, que já é gerido pelo Identity
 
             entity.ToTable("utilizador");
 
-            entity.HasIndex(e => e.Email, "utilizador_email_key").IsUnique();
+            entity.HasIndex(e => e.Email).IsUnique(); // Garante que o email seja único
 
-            entity.Property(e => e.UtilizadorId).HasColumnName("utilizador_id");
-            entity.Property(e => e.Email).HasColumnName("email");
             entity.Property(e => e.Nome).HasColumnName("nome");
-            entity.Property(e => e.Password).HasColumnName("password");
             entity.Property(e => e.TpUtilizador)
                 .HasConversion(
                     v => v.ToString(),
                     v => (Utilizador.TipoUtilizador)Enum.Parse(typeof(Utilizador.TipoUtilizador), v));
-            entity.Property(e => e.IdentityUserId).HasColumnName("identity_user_id");
-            
-            entity.HasOne(u => u.IdentityUser)
-                .WithOne()
-                .HasForeignKey<Utilizador>(u => u.IdentityUserId)
-                .HasConstraintName("FK_Utilizador_AspNetUsers")
+
+            // Relacionamento com a tabela Carteira
+            entity.HasMany(u => u.Carteiras)
+                .WithOne(c => c.Utilizador)
+                .HasForeignKey(c => c.UtilizadorId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
 
         OnModelCreatingPartial(modelBuilder);
     }
