@@ -7,7 +7,8 @@ using TrabalhoES2.Models;
 
 public static class SeedRoles
 {
-    public static async Task SeedAsync(IServiceProvider serviceProvider, RoleManager<IdentityRole<int>> roleManager, UserManager<Utilizador> userManager)
+    public static async Task SeedAsync(IServiceProvider serviceProvider, RoleManager<IdentityRole<int>> roleManager,
+        UserManager<Utilizador> userManager)
     {
         // Criar roles a partir do enum TipoUtilizador
         var enumValues = Enum.GetValues(typeof(Utilizador.TipoUtilizador)).Cast<Utilizador.TipoUtilizador>();
@@ -22,28 +23,22 @@ public static class SeedRoles
             }
         }
 
-        // Criar o utilizador admin se não existir
-        var adminUser = await userManager.FindByEmailAsync("admin@example.com");
 
-        if (adminUser == null)
+        var adminUser = new Utilizador
         {
-            adminUser = new Utilizador
-            {
-                UserName = "adminUser",
-                Email = "admin@example.com",
-                Nome = "Joao Santos", // Certifique-se de que a propriedade Nome está definida na sua classe Utilizador
-                EmailConfirmed = true,
-                TpUtilizador = Utilizador.TipoUtilizador.Admin // Define a role como Admin
-            };
-
-            // Criar o usuário admin com senha forte
-            var createAdminResult = await userManager.CreateAsync(adminUser, "SenhaForte123!");
-
-            if (createAdminResult.Succeeded)
-            {
-                // Atribuir a role 'Admin' ao utilizador admin
-                await userManager.AddToRoleAsync(adminUser, Utilizador.TipoUtilizador.Admin.ToString());
-            }
+            UserName = "admin@example.com",
+            Email = "admin@example.com",
+            Nome = "Joao Santos", // Certifique-se de que a propriedade Nome está definida na sua classe Utilizador
+            EmailConfirmed = true,
+            TpUtilizador = Utilizador.TipoUtilizador.Admin // Define a role como Admin
+        };
+        
+        var createAdminResul = await userManager.FindByEmailAsync(adminUser.Email);
+        if (createAdminResul == null)
+        {
+            await userManager.CreateAsync(adminUser, "Admin@123");
+            await userManager.AddToRoleAsync(adminUser, Utilizador.TipoUtilizador.Admin.ToString());
         }
     }
 }
+

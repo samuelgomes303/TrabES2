@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.Build.Framework;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace TrabalhoES2.Models;
 
@@ -37,6 +39,7 @@ public partial class projetoPraticoDbContext : IdentityDbContext<Utilizador, Ide
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfiguration(new ApplicationUserIdentityConfiguration());
         base.OnModelCreating(modelBuilder);
         
         modelBuilder
@@ -211,10 +214,20 @@ public partial class projetoPraticoDbContext : IdentityDbContext<Utilizador, Ide
                 .HasForeignKey(c => c.UtilizadorId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
-
-
+        
         OnModelCreatingPartial(modelBuilder);
+        
     }
-
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
+
+public class ApplicationUserIdentityConfiguration : IEntityTypeConfiguration<Utilizador>
+{
+    public void Configure(EntityTypeBuilder<Utilizador> builder)
+    {
+        builder.Property(x => x.Nome).IsRequired();
+    }
+}
+
+    
+
