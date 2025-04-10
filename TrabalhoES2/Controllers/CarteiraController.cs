@@ -94,6 +94,25 @@ namespace TrabalhoES2.Controllers
 
         return View(carteira);
     }
+    
+    [HttpGet]
+    public IActionResult CriarDeposito()
+    {
+        return View();
+    }
+
+    [HttpGet]
+    public IActionResult CriarFundo()
+    {
+        return View();
+    }
+
+    [HttpGet]
+    public IActionResult CriarImovel()
+    {
+        return View();
+    }
+
 
         // GET: Carteira/AtivosCatalogo
         public async Task<IActionResult> AtivosCatalogo()
@@ -251,6 +270,41 @@ namespace TrabalhoES2.Controllers
 
             return View(ativo);
         }
+        
+        // Delete AtivoFinanceiro
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarConfirmado(int id)
+        {
+            // Busca o ativo apenas se estiver no catálogo (carteira sistema)
+            var ativo = await _context.Ativofinanceiros
+                .Include(a => a.Depositoprazo)
+                .Include(a => a.Fundoinvestimento)
+                .Include(a => a.Imovelarrendado)
+                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == id && a.CarteiraId == Constantes.CarteiraSistemaId);
+
+            if (ativo == null)
+            {
+                return NotFound("Ativo não encontrado no catálogo.");
+            }
+
+            // Remove dependências específicas
+            if (ativo.Depositoprazo != null)
+                _context.Depositoprazos.Remove(ativo.Depositoprazo);
+
+            if (ativo.Fundoinvestimento != null)
+                _context.Fundoinvestimentos.Remove(ativo.Fundoinvestimento);
+
+            if (ativo.Imovelarrendado != null)
+                _context.Imovelarrendados.Remove(ativo.Imovelarrendado);
+
+            _context.Ativofinanceiros.Remove(ativo);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(AtivosCatalogo));
+        }
+
+
 
         // POST: Carteira/Remover/5
         [HttpPost, ActionName("Remover")]

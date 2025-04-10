@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TrabalhoES2.Models;
+using TrabalhoES2.utils;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,9 @@ builder.Services.AddIdentity<Utilizador, IdentityRole<int>>()
     .AddDefaultUI()
     .AddDefaultTokenProviders();
     
+
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<Utilizador>, AppUserClaimsPrincipalFactory>();
+
 
 var app = builder.Build();
 

@@ -8,6 +8,26 @@
 
 <div class="mb-4">
     <a asp-action="Index" class="btn btn-secondary">Voltar para Minha Carteira</a>
+
+    @{
+        var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+        var tipoUtilizador = "";
+        using (var db = new projetoPraticoDbContext())
+        {
+            var user = db.Users.FirstOrDefault(u => u.Id == userId);
+            if (user != null)
+            {
+                tipoUtilizador = user.TpUtilizador.ToString();
+            }
+        }
+    }
+    @if (tipoUtilizador == "Admin")
+    {
+        <a asp-action="CriarDeposito" class="btn btn-primary">Adicionar Depósito Prazo</a>
+        <a asp-action="CriarFundo" class="btn btn-primary">Adicionar Fundo de Investimento</a>
+        <a asp-action="CriarImovel" class="btn btn-primary">Adicionar Imóvel Arrendado</a>
+    }
+
 </div>
 
 <div class="row">
@@ -86,7 +106,24 @@
 
                     <form asp-action="AdicionarAtivo" method="post">
                         <input type="hidden" name="ativoId" value="@ativo.AtivofinanceiroId" />
-                        <button type="submit" class="btn btn-success w-100">Adicionar à Carteira</button>
+                        <button type="submit" class="btn btn-success w-100 mb-2">Adicionar à Carteira</button>
+                        @{
+                            var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                            var tipoUtilizador = "";
+                            using (var db = new projetoPraticoDbContext())
+                            {
+                            var user = db.Users.FirstOrDefault(u => u.Id == userId);
+                            if (user != null)
+                            {
+                            tipoUtilizador = user.TpUtilizador.ToString();
+                            }
+                            }
+                            }
+                            @if (tipoUtilizador == "Admin")
+                            { 
+                            <p/>
+                            <button asp-action="EliminarConfirmado" class="btn btn-danger w-100">Eliminar</button>
+                        }
                     </form>
                 </div>
             </div>
