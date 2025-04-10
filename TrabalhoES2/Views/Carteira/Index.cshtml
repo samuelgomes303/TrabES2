@@ -1,0 +1,153 @@
+﻿@model TrabalhoES2.Models.Carteira
+
+@{
+    ViewData["Title"] = "Minha Carteira";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<div class="mb-4">
+    <a asp-action="AtivosCatalogo" class="btn btn-primary">Ver Ativos Disponíveis</a>
+</div>
+
+@if (Model.Ativofinanceiros.Count == 0)
+{
+    <div class="alert alert-info">
+        Você ainda não tem ativos na sua carteira. Clique em "Ver Ativos Disponíveis" para adicionar.
+    </div>
+}
+else
+{
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Seus Ativos</h3>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Duração (meses)</th>
+                    <th>Data de Início</th>
+                    <th>Detalhes</th>
+                    <th>Valor</th>
+                    <th>Expectativa de Rendimento</th>
+                    <th>Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var ativo in Model.Ativofinanceiros)
+                {
+                    <tr>
+                        <td>
+                            @if (ativo.Depositoprazo != null)
+                            {
+                                <span>Depósito a Prazo</span>
+                            }
+                            else if (ativo.Fundoinvestimento != null)
+                            {
+                                <span>Fundo de Investimento</span>
+                            }
+                            else if (ativo.Imovelarrendado != null)
+                            {
+                                <span>Imóvel Arrendado</span>
+                            }
+                            else
+                            {
+                                <span>Ativo Desconhecido</span>
+                            }
+                        </td>
+                        <td>@ativo.Duracaomeses meses</td>
+                        <td>@ativo.Datainicio?.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            @if (ativo.Depositoprazo != null)
+                            {
+                                <span>Taxa: @ativo.Depositoprazo.Taxajuroanual%<br />Banco: @ativo.Depositoprazo.Banco?.Nome</span>
+                            }
+                            else if (ativo.Fundoinvestimento != null)
+                            {
+                                <span>@ativo.Fundoinvestimento.Nome<br />Taxa: @ativo.Fundoinvestimento.Taxajuropdefeito%</span>
+                            }
+                            else if (ativo.Imovelarrendado != null)
+                            {
+                                <span>@ativo.Imovelarrendado.Designacao<br />@ativo.Imovelarrendado.Localizacao</span>
+                            }
+                        </td>
+                        <td>
+                            @if (ativo.Depositoprazo != null)
+                            {
+                                <span>@ativo.Depositoprazo.Valoratual.ToString("C")</span>
+                            }
+                            else if (ativo.Fundoinvestimento != null)
+                            {
+                                <span>@ativo.Fundoinvestimento.Montanteinvestido.ToString("C")</span>
+                            }
+                            else if (ativo.Imovelarrendado != null)
+                            {
+                                <span>@ativo.Imovelarrendado.Valorimovel.ToString("C")</span>
+                            }
+                        </td>
+                        <td>
+                            @{
+                                decimal valorExpectativa = 0;
+                                string periodoExpectativa = "";
+
+                                if (ativo.Depositoprazo != null)
+                                {
+                                    // Cálculo para depósito a prazo (juros compostos simples)
+                                    decimal valorInicial = ativo.Depositoprazo.Valorinicial;
+                                    decimal taxaAnual = ativo.Depositoprazo.Taxajuroanual / 100;
+
+                                    int duracaoAnos = (int)Math.Ceiling((ativo.Duracaomeses ?? 0) / 12.0m);
+
+
+
+                                    valorExpectativa = valorInicial * (decimal)Math.Pow((double)(1 + taxaAnual), duracaoAnos) - valorInicial;
+                                    periodoExpectativa = $"em {duracaoAnos} {(duracaoAnos == 1 ? "ano" : "anos")}";
+                                }
+                                else if (ativo.Fundoinvestimento != null)
+                                {
+                                    // Cálculo para fundo de investimento (estimativa baseada na taxa)
+                                    decimal valorInvestido = ativo.Fundoinvestimento.Montanteinvestido;
+                                    decimal taxaAnual = ativo.Fundoinvestimento.Taxajuropdefeito / 100;
+                                    // Para o depósito a prazo
+                                    int duracaoAnos = (int)Math.Ceiling((ativo.Duracaomeses ?? 0) / 12.0m);
+
+
+                                    valorExpectativa = valorInvestido * (decimal)Math.Pow((double)(1 + taxaAnual), duracaoAnos) - valorInvestido;
+                                    periodoExpectativa = $"em {duracaoAnos} {(duracaoAnos == 1 ? "ano" : "anos")}";
+                                }
+                                else if (ativo.Imovelarrendado != null)
+                                {
+                                    // Cálculo para imóvel arrendado (renda anual menos despesas)
+                                    decimal rendaAnual = ativo.Imovelarrendado.Valorrenda * 12;
+                                    decimal despesasAnuais = ativo.Imovelarrendado.Valormensalcondo * 12 + ativo.Imovelarrendado.Valoranualdespesas;
+
+                                    valorExpectativa = (rendaAnual - despesasAnuais);
+                                    periodoExpectativa = "por ano";
+                                }
+                            }
+
+                            @if (valorExpectativa > 0)
+                            {
+                                <span class="text-success">+@valorExpectativa.ToString("C") @periodoExpectativa</span>
+                            }
+                            else if (valorExpectativa < 0)
+                            {
+                                <span class="text-danger">@valorExpectativa.ToString("C") @periodoExpectativa</span>
+                            }
+                            else
+                            {
+                                <span>Sem rendimento</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Remover" asp-route-id="@ativo.AtivofinanceiroId" class="btn btn-danger btn-sm">Remover</a>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
