@@ -4,7 +4,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using TrabalhoES2.Models;
 
-namespace TrabalhoES2.utils // ou Services, se colocares noutra pasta
+namespace TrabalhoES2.utils 
 {
     public class AppUserClaimsPrincipalFactory : UserClaimsPrincipalFactory<Utilizador, IdentityRole<int>>
     {

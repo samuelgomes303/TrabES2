@@ -31,4 +31,8 @@
         <Folder Include="Migrations\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="dotnet" />
+    </ItemGroup>
+
 </Project>
