@@ -1,0 +1,50 @@
+﻿@model TrabalhoES2.Models.Depositoprazo
+@{
+    ViewData["Title"] = "Criar Depósito a Prazo";
+    var bancos = ViewBag.Bancos as List<TrabalhoES2.Models.Banco>;
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="CriarDeposito" method="post">
+    <div class="form-group mb-3">
+        <label>Duração (meses)</label>
+        <input type="number" name="ativo.Duracaomeses" class="form-control" required />
+    </div>
+
+    <div class="form-group mb-3">
+        <label>Taxa de Juro Anual (%)</label>
+        <input type="number" step="0.01" name="deposito.Taxajuroanual" class="form-control" required />
+    </div>
+
+    <div class="form-group mb-3">
+        <label>Valor Inicial (€)</label>
+        <input type="number" step="0.01" name="deposito.Valorinicial" class="form-control" required />
+    </div>
+
+    <div class="form-group mb-3">
+        <label>Banco</label>
+        <select name="deposito.BancoId" class="form-select" required>
+            <option value="">-- Selecione --</option>
+            @foreach (var banco in bancos)
+            {
+                <option value="@banco.BancoId">@banco.Nome</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group mb-3">
+        <label>Imposto (%)</label>
+        <input type="text" class="form-control" value="28%" readonly />
+        <input type="hidden" name="ativo.Percimposto" value="28" />
+    </div>
+
+
+
+    <!-- Campos ocultos ou default -->
+    <input type="hidden" name="deposito.Nrconta" value="auto" />
+    <input type="hidden" name="deposito.Titular" value="auto" />
+    <input type="hidden" name="deposito.Valoratual" value="0" />
+
+    <button type="submit" class="btn btn-primary">Criar</button>
+</form>

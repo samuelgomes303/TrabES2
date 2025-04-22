@@ -4,6 +4,7 @@ using TrabalhoES2.Models;
 using TrabalhoES2.utils;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using TrabalhoES2.Services;
 
 namespace TrabalhoES2.Controllers
 {
@@ -11,11 +12,14 @@ namespace TrabalhoES2.Controllers
     public class CarteiraController : Controller
     {
         private readonly projetoPraticoDbContext _context;
+        private readonly DepositoService _depositoService;
 
         public CarteiraController(projetoPraticoDbContext context)
         {
             _context = context;
-        }   
+            _depositoService = new DepositoService(_context); // Inicializa o serviço aqui
+        }
+  
 
         // GET: Carteira
         // Substitua o método Index por este
@@ -94,149 +98,88 @@ namespace TrabalhoES2.Controllers
 
         return View(carteira);
     }
-    
-    [HttpGet]
-    public IActionResult CriarDeposito()
-    {
-        return View();
-    }
-
-    [HttpGet]
-    public IActionResult CriarFundo()
-    {
-        return View();
-    }
-
-    [HttpGet]
-    public IActionResult CriarImovel()
-    {
-        return View();
-    }
-
 
         // GET: Carteira/AtivosCatalogo
         public async Task<IActionResult> AtivosCatalogo()
         {
-            // Obter todos os ativos do catálogo (carteira sistema)
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
             var ativosCatalogo = await _context.Ativofinanceiros
-                .Where(a => a.CarteiraId == Constantes.CarteiraSistemaId)
-                .Include(a => a.Depositoprazo)
-                    .ThenInclude(d => d.Banco)
-                .Include(a => a.Fundoinvestimento)
-                    .ThenInclude(f => f.Banco)
-                .Include(a => a.Imovelarrendado)
-                    .ThenInclude(i => i.Banco)
+                .Include(a => a.Carteira)
+                .Where(a => a.Carteira.UtilizadorId == userId)
+                .Include(a => a.Depositoprazo).ThenInclude(d => d.Banco)
+                .Include(a => a.Fundoinvestimento).ThenInclude(f => f.Banco)
+                .Include(a => a.Imovelarrendado).ThenInclude(i => i.Banco)
                 .ToListAsync();
 
             return View(ativosCatalogo);
         }
 
+
+
         // POST: Carteira/AdicionarAtivo
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AdicionarAtivo(int ativoId)
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> AdicionarAtivo(int ativoId)
+{
+    var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+    var carteira = await _context.Carteiras.FirstOrDefaultAsync(c => c.UtilizadorId == userId);
+    if (carteira == null) return NotFound();
+
+    var ativoOriginal = await _context.Ativofinanceiros
+        .Include(a => a.Depositoprazo)
+        .Include(a => a.Fundoinvestimento)
+        .Include(a => a.Imovelarrendado)
+        .FirstOrDefaultAsync(a => a.AtivofinanceiroId == ativoId && a.CarteiraId == carteira.CarteiraId);
+
+    if (ativoOriginal == null)
+        return NotFound("Ativo não encontrado no catálogo.");
+
+    // Verificar se já existe um ativo igual na carteira do utilizador
+    bool jaExiste = await _context.Ativofinanceiros
+        .AnyAsync(a => a.CarteiraId == carteira.CarteiraId &&
+            a.Depositoprazo != null &&
+            ativoOriginal.Depositoprazo != null &&
+            a.Depositoprazo.Taxajuroanual == ativoOriginal.Depositoprazo.Taxajuroanual &&
+            a.Depositoprazo.Valorinicial == ativoOriginal.Depositoprazo.Valorinicial);
+
+    if (jaExiste)
+    {
+        TempData["Mensagem"] = "Este ativo já está na sua carteira.";
+        return RedirectToAction("Index");
+    }
+
+    var novoAtivo = new Ativofinanceiro
+    {
+        CarteiraId = carteira.CarteiraId,
+        Datainicio = DateOnly.FromDateTime(DateTime.Now),
+        Duracaomeses = ativoOriginal.Duracaomeses,
+        Percimposto = ativoOriginal.Percimposto
+    };
+
+    _context.Ativofinanceiros.Add(novoAtivo);
+    await _context.SaveChangesAsync();
+
+    if (ativoOriginal.Depositoprazo != null)
+    {
+        _context.Depositoprazos.Add(new Depositoprazo
         {
-            // Obter o ativo do catálogo
-            var ativoOriginal = await _context.Ativofinanceiros
-                .Include(a => a.Depositoprazo)
-                    .ThenInclude(d => d.Banco)
-                .Include(a => a.Fundoinvestimento)
-                    .ThenInclude(f => f.Banco)
-                .Include(a => a.Imovelarrendado)
-                    .ThenInclude(i => i.Banco)
-                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == ativoId && a.CarteiraId == Constantes.CarteiraSistemaId);
+            AtivofinanceiroId = novoAtivo.AtivofinanceiroId,
+            BancoId = ativoOriginal.Depositoprazo.BancoId,
+            Nrconta = ativoOriginal.Depositoprazo.Nrconta,
+            Titular = ativoOriginal.Depositoprazo.Titular,
+            Taxajuroanual = ativoOriginal.Depositoprazo.Taxajuroanual,
+            Valorinicial = ativoOriginal.Depositoprazo.Valorinicial,
+            Valoratual = ativoOriginal.Depositoprazo.Valoratual
+        });
+    }
 
-            if (ativoOriginal == null)
-            {
-                return NotFound("Ativo não encontrado no catálogo.");
-            }
+    await _context.SaveChangesAsync();
+    TempData["Mensagem"] = "Ativo adicionado com sucesso!";
+    return RedirectToAction("Index");
+}
 
-            // Obter o ID do utilizador atual
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var utilizador = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            if (utilizador == null)
-            {
-                return NotFound("Utilizador não encontrado.");
-            }
-
-            // Obter a carteira do utilizador
-            var carteira = await _context.Carteiras
-                .FirstOrDefaultAsync(c => c.UtilizadorId == userId);
-
-            if (carteira == null)
-            {
-                // Criar uma nova carteira se não existir
-                carteira = new Carteira
-                {
-                    Nome = "Carteira Principal",
-                    UtilizadorId = userId
-                };
-                _context.Carteiras.Add(carteira);
-                await _context.SaveChangesAsync();
-            }
-
-            // Criar cópia do ativo para a carteira do utilizador
-            var novoAtivo = new Ativofinanceiro
-            {
-                Percimposto = ativoOriginal.Percimposto,
-                Duracaomeses = ativoOriginal.Duracaomeses,
-                Datainicio = DateOnly.FromDateTime(DateTime.Now),  // Data atual como data de início
-                CarteiraId = carteira.CarteiraId
-            };
-
-            _context.Ativofinanceiros.Add(novoAtivo);
-            await _context.SaveChangesAsync();
-
-            // Copiar informações específicas baseadas no tipo de ativo
-            if (ativoOriginal.Depositoprazo != null)
-            {
-                var depositoOriginal = ativoOriginal.Depositoprazo;
-                var novoDeposito = new Depositoprazo
-                {
-                    AtivofinanceiroId = novoAtivo.AtivofinanceiroId,
-                    BancoId = depositoOriginal.BancoId,
-                    Nrconta = depositoOriginal.Nrconta,
-                    Titular = depositoOriginal.Titular,
-                    Taxajuroanual = depositoOriginal.Taxajuroanual,
-                    Valorinicial = depositoOriginal.Valorinicial,
-                    Valoratual = depositoOriginal.Valoratual
-                };
-                _context.Depositoprazos.Add(novoDeposito);
-            }
-            else if (ativoOriginal.Fundoinvestimento != null)
-            {
-                var fundoOriginal = ativoOriginal.Fundoinvestimento;
-                var novoFundo = new Fundoinvestimento
-                {
-                    AtivofinanceiroId = novoAtivo.AtivofinanceiroId,
-                    BancoId = fundoOriginal.BancoId,
-                    Nome = fundoOriginal.Nome,
-                    Montanteinvestido = fundoOriginal.Montanteinvestido,
-                    Taxajuropdefeito = fundoOriginal.Taxajuropdefeito
-                };
-                _context.Fundoinvestimentos.Add(novoFundo);
-            }
-            else if (ativoOriginal.Imovelarrendado != null)
-            {
-                var imovelOriginal = ativoOriginal.Imovelarrendado;
-                var novoImovel = new Imovelarrendado
-                {
-                    AtivofinanceiroId = novoAtivo.AtivofinanceiroId,
-                    BancoId = imovelOriginal.BancoId,
-                    Designacao = imovelOriginal.Designacao,
-                    Localizacao = imovelOriginal.Localizacao,
-                    Valorimovel = imovelOriginal.Valorimovel,
-                    Valorrenda = imovelOriginal.Valorrenda,
-                    Valormensalcondo = imovelOriginal.Valormensalcondo,
-                    Valoranualdespesas = imovelOriginal.Valoranualdespesas
-                };
-                _context.Imovelarrendados.Add(novoImovel);
-            }
-
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
-        }
+        
 
         // GET: Carteira/Remover/5
         public async Task<IActionResult> Remover(int id)
@@ -270,41 +213,6 @@ namespace TrabalhoES2.Controllers
 
             return View(ativo);
         }
-        
-        // Delete AtivoFinanceiro
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EliminarConfirmado(int id)
-        {
-            // Busca o ativo apenas se estiver no catálogo (carteira sistema)
-            var ativo = await _context.Ativofinanceiros
-                .Include(a => a.Depositoprazo)
-                .Include(a => a.Fundoinvestimento)
-                .Include(a => a.Imovelarrendado)
-                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == id && a.CarteiraId == Constantes.CarteiraSistemaId);
-
-            if (ativo == null)
-            {
-                return NotFound("Ativo não encontrado no catálogo.");
-            }
-
-            // Remove dependências específicas
-            if (ativo.Depositoprazo != null)
-                _context.Depositoprazos.Remove(ativo.Depositoprazo);
-
-            if (ativo.Fundoinvestimento != null)
-                _context.Fundoinvestimentos.Remove(ativo.Fundoinvestimento);
-
-            if (ativo.Imovelarrendado != null)
-                _context.Imovelarrendados.Remove(ativo.Imovelarrendado);
-
-            _context.Ativofinanceiros.Remove(ativo);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(AtivosCatalogo));
-        }
-
-
 
         // POST: Carteira/Remover/5
         [HttpPost, ActionName("Remover")]
@@ -343,212 +251,124 @@ namespace TrabalhoES2.Controllers
             return RedirectToAction(nameof(Index));
         }
         
-       
-
-        [HttpGet, ActionName("GerarRelatorio")]
-        public async Task<IActionResult> GerarRelatorio(int id, DateTime dataInicio, DateTime dataFim)
+        
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CriarDeposito(Depositoprazo deposito, Ativofinanceiro ativo)
         {
-            // Obter ID do utilizador autenticado
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            // Carregar a carteira com os ativos e dados relacionados
-            var carteira = await _context.Carteiras
-                .Include(c => c.Utilizador)
-                .Include(c => c.Ativofinanceiros)
-                    .ThenInclude(a => a.Depositoprazo)
-                        .ThenInclude(d => d.Banco)
-                .Include(c => c.Ativofinanceiros)
-                    .ThenInclude(a => a.Fundoinvestimento)
-                        .ThenInclude(f => f.Banco)
-                .Include(c => c.Ativofinanceiros)
-                    .ThenInclude(a => a.Imovelarrendado)
-                .FirstOrDefaultAsync(c => c.CarteiraId == id && c.UtilizadorId == userId);
+            await _depositoService.CriarDepositoAsync(deposito, ativo, userId);
+            return RedirectToAction("AtivosCatalogo");
+        }
+        
 
-            if (carteira == null)
+        
+        [HttpGet]
+        public async Task<IActionResult> Create()
+        {
+            ViewBag.Bancos = await _context.Bancos.ToListAsync();
+            return View();
+        }
+        
+        // GET: Carteira/Edit/5
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var deposito = await _context.Depositoprazos
+                .Include(d => d.Ativofinanceiro)
+                .FirstOrDefaultAsync(d => d.DepositoprazoId == id);
+
+            if (deposito == null)
             {
-                return NotFound("Carteira não encontrada ou não pertence ao utilizador.");
-            }
-            
-            // 1. Validações básicas
-            if (dataFim <= dataInicio)
-            {
-                TempData["Erro"] = "A data final deve ser posterior à data inicial";
-                return RedirectToAction(nameof(Index));
-            }
-            
-            // 3. Filtrar ativos pelo período e calcular valores
-            decimal lucroTotalBruto = 0;
-            decimal impostosTotais = 0;
-            int totalMeses = (dataFim.Year - dataInicio.Year) * 12 + dataFim.Month - dataInicio.Month;
-
-            var ativosRelatorio = new List<dynamic>();
-            foreach (var ativo in carteira.Ativofinanceiros)
-            {
-                var dataInicioAtivo = ativo.Datainicio ?? DateOnly.FromDateTime(DateTime.MinValue);
-                if (dataInicioAtivo.ToDateTime(TimeOnly.MinValue) > dataFim || 
-                    (ativo.Duracaomeses.HasValue && dataInicioAtivo.ToDateTime(TimeOnly.MinValue).AddMonths(ativo.Duracaomeses.Value) < dataInicio))
-                {
-                    continue;
-                }
-
-                decimal lucroBruto = 0, lucroLiquido=0, impostos=0, lucroMensalLiquido=0, lucroMensalBruto = 0;
-                
-                // Calcular para cada tipo de ativo
-                if (ativo.Depositoprazo != null)
-                {
-                    CalcularLucroDeposito(
-                        ativo.Depositoprazo,
-                        ativo.Percimposto ?? 0,
-                        dataInicioAtivo,
-                        ativo.Duracaomeses ?? 0,
-                        dataInicio,
-                        dataFim,
-                        out lucroBruto,
-                        out lucroLiquido,
-                        out impostos,
-                        out lucroMensalLiquido,
-                        out lucroMensalBruto
-                    );
-                }
-                else if (ativo.Imovelarrendado != null)
-                {
-                    CalcularLucroImovel(
-                        ativo.Imovelarrendado,
-                        ativo.Percimposto ?? 0,
-                        dataInicioAtivo,
-                        dataInicio,
-                        dataFim,
-                        out lucroBruto,
-                        out lucroLiquido,
-                        out impostos,
-                        out lucroMensalLiquido,
-                        out lucroMensalBruto
-                    );
-                }
-                // Armazenando os cálculos para cada ativo na lista
-                ativosRelatorio.Add(new
-                {
-                    TipoAtivo = ativo.Depositoprazo != null ? "Depósito a Prazo" :
-                        ativo.Imovelarrendado != null ? "Imóvel Arrendado" : "Outro",
-                    LucroBruto = lucroBruto,
-                    Impostos = impostos,
-                    LucroLiquido = lucroLiquido
-                });
-
-                lucroTotalBruto += lucroBruto;
-                impostosTotais += impostos;
+                return NotFound();
             }
 
-            decimal lucroTotalLiquido = lucroTotalBruto - impostosTotais;
-            decimal lucroMensalMedioBruto = totalMeses > 0 ? lucroTotalBruto / totalMeses : 0;
-            decimal lucroMensalMedioLiquido = totalMeses > 0 ? lucroTotalLiquido / totalMeses : 0;
+            ViewBag.Bancos = await _context.Bancos.ToListAsync();
+            ViewBag.Duracao = deposito.Ativofinanceiro.Duracaomeses;
 
-            // Passando os dados para a View
-            ViewBag.DataInicio = dataInicio;
-            ViewBag.DataFim = dataFim;
-            ViewBag.LucroTotalBruto = lucroTotalBruto;
-            ViewBag.ImpostosTotais = impostosTotais;
-            ViewBag.LucroTotalLiquido = lucroTotalLiquido;
-            ViewBag.LucroMensalMedioBruto = lucroMensalMedioBruto;
-            ViewBag.LucroMensalMedioLiquido = lucroMensalMedioLiquido;
-            ViewBag.AtivosRelatorio = ativosRelatorio;
-
-            return View(carteira);
+            return View(deposito);
         }
-        
-        
-        // Métodos auxiliares para cálculos (implementar na mesma classe do controlador)
-        private void CalcularLucroDeposito(
-            Depositoprazo deposito,
-            decimal percImposto,
-            DateOnly dataInicioAtivo,
-            int duracaoMeses,
-            DateTime inicioPeriodo,
-            DateTime fimPeriodo,
-            out decimal lucroBruto,
-            out decimal lucroDepoisImpostos,
-            out decimal impostos,
-            out decimal lucroMensalMedioDepoisImpostos, out decimal lucroMedioMensalBruto)
+
+// POST: Carteira/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(Depositoprazo deposito, int DuracaoMeses)
         {
-            // Inicializar valores de retorno
-            lucroBruto = 0;
-            impostos = 0;
-            lucroDepoisImpostos = 0;
-            lucroMedioMensalBruto = 0;
-            lucroMensalMedioDepoisImpostos = 0;
+            var ativo = await _context.Ativofinanceiros
+                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == deposito.AtivofinanceiroId);
 
-            // 1. Converter datas e verificar período válido
-            DateTime dtInicioAtivo = dataInicioAtivo.ToDateTime(TimeOnly.MinValue);
-            DateTime dtFimAtivo = dtInicioAtivo.AddMonths(duracaoMeses);
+            if (ativo == null)
+                return NotFound();
 
-            // 2. Calcular interseção de períodos
-            DateTime inicioCalculo = dtInicioAtivo < inicioPeriodo ? inicioPeriodo : dtInicioAtivo;
-            DateTime fimCalculo = dtFimAtivo > fimPeriodo ? fimPeriodo : dtFimAtivo;
+            ativo.Duracaomeses = DuracaoMeses;
 
-            if (fimCalculo <= inicioCalculo) return;
+            // Garantir valores obrigatórios para os campos que não estão no formulário
+            deposito.Nrconta ??= "auto";
+            deposito.Titular ??= "auto";
 
-            // 3. Calcular meses no período
-            int mesesNoPeriodo = ((fimCalculo.Year - inicioCalculo.Year) * 12) + fimCalculo.Month - inicioCalculo.Month;
-            if (mesesNoPeriodo <= 0) return;
-            
-            // 4. calculo do lucro de deposito a prazo
-            decimal taxaMensal = deposito.Taxajuroanual / 12 / 100;
-            decimal valorFinal = deposito.Valorinicial * (decimal)Math.Pow(1 + (double)taxaMensal, mesesNoPeriodo);
-            
-            lucroBruto = valorFinal - deposito.Valorinicial;
-            impostos = lucroBruto * ( percImposto / 100);
-            lucroDepoisImpostos = lucroBruto - impostos; // depois de impostos
-                // periodo mensal médio
-            lucroMedioMensalBruto = lucroBruto / mesesNoPeriodo;
-            lucroMensalMedioDepoisImpostos = lucroDepoisImpostos / mesesNoPeriodo; // depois de impostos
+            // Atualizar o valor atual com a fórmula
+            var C = deposito.Valorinicial;
+            var TANB = deposito.Taxajuroanual / 100m;
+            var n = DuracaoMeses;
+            var t = 0.28m;
+            deposito.Valoratual = C + (C * TANB * n / 12m) * (1 - t);
+
+            _context.Update(deposito);
+            _context.Update(ativo);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(AtivosCatalogo));
+        }
+
+
+
+        // GET: Carteira/Delete/5
+        [HttpGet]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var deposito = await _context.Depositoprazos
+                .Include(d => d.Ativofinanceiro)
+                .FirstOrDefaultAsync(d => d.DepositoprazoId == id);
+        
+            if (deposito == null)
+            {
+                return NotFound();
+            }
+        
+            return View(deposito);
         }
         
-
-        private void CalcularLucroImovel(Imovelarrendado imovel, decimal percImposto, DateOnly dataInicioAtivo, DateTime inicioPeriodo, DateTime fimPeriodo,
-            out decimal lucroBruto, 
-            out decimal lucroDepoisImpostos, 
-            out decimal impostos, 
-            out decimal lucroMensalMedioDepoisImpostos, out decimal lucroMedioMensalBruto)
+        // POST: Carteira/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            lucroBruto = 0;
-            lucroDepoisImpostos = 0;
-            impostos = 0;
-            lucroMensalMedioDepoisImpostos = 0;
-            lucroMedioMensalBruto = 0;
-
-            // 1. Converter datas e verificar período válido
-            DateTime dtInicioAtivo = dataInicioAtivo.ToDateTime(TimeOnly.MinValue);
-            DateTime dtFimAtivo = fimPeriodo; // Imóveis geralmente não têm data fim fixa
-
-            // 2. Calcular interseção de períodos
-            DateTime inicioCalculo = dtInicioAtivo < inicioPeriodo ? inicioPeriodo : dtInicioAtivo;
-            DateTime fimCalculo = dtFimAtivo > fimPeriodo ? fimPeriodo : dtFimAtivo;
-
-            if (fimCalculo <= inicioCalculo) return;
-
-            // 3. Calcular meses no período
-            int mesesNoPeriodo = ((fimCalculo.Year - inicioCalculo.Year) * 12) + 
-                fimCalculo.Month - inicioCalculo.Month;
-            if (mesesNoPeriodo <= 0) return;
-
-            // 4. Cálculo do lucro bruto (rendas - despesas)
-            decimal rendaBruta = imovel.Valorrenda * mesesNoPeriodo;
-            decimal despesaAnualRespetiva = (imovel.Valoranualdespesas / 12) * mesesNoPeriodo;
-            decimal despesaTotal = (imovel.Valormensalcondo * mesesNoPeriodo) + despesaAnualRespetiva;
-    
-            lucroBruto = rendaBruta - despesaTotal;
-            lucroMedioMensalBruto = lucroBruto / mesesNoPeriodo;
-            impostos = lucroBruto * (percImposto / 100);
-            
-            lucroDepoisImpostos = lucroBruto - impostos;
-            lucroMensalMedioDepoisImpostos = lucroDepoisImpostos / mesesNoPeriodo;
-        }
+            var deposito = await _context.Depositoprazos
+                .FirstOrDefaultAsync(d => d.DepositoprazoId == id);
         
-        private (decimal bruto, decimal imposto) CalcularLucroFundo(Fundoinvestimento fundo, decimal percImposto, DateTime inicio, DateTime fim)
-        {
-            // Implementar cálculo real baseado nas datas
-            decimal rendimento = fundo.Montanteinvestido * (fundo.Taxajuropdefeito / 100);
-            decimal imposto = rendimento * (percImposto / 100);
-            return (rendimento, imposto);
+            if (deposito == null)
+                return NotFound();
+        
+            var ativo = await _context.Ativofinanceiros
+                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == deposito.AtivofinanceiroId);
+        
+            _context.Depositoprazos.Remove(deposito);
+            if (ativo != null)
+                _context.Ativofinanceiros.Remove(ativo);
+        
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(AtivosCatalogo));
         }
+
+        
+
+ 
+
+
+
+
+
+
+
     }
 }
