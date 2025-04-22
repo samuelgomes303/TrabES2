@@ -4,6 +4,7 @@ using TrabalhoES2.Models;
 using TrabalhoES2.utils;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using TrabalhoES2.Services.Relatorios;
 
 namespace TrabalhoES2.Controllers
 {
@@ -348,9 +349,8 @@ namespace TrabalhoES2.Controllers
         [HttpGet, ActionName("GerarRelatorio")]
         public async Task<IActionResult> GerarRelatorio(int id, DateTime dataInicio, DateTime dataFim)
         {
-            // Obter ID do utilizador autenticado
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            // Carregar a carteira com os ativos e dados relacionados
+            
             var carteira = await _context.Carteiras
                 .Include(c => c.Utilizador)
                 .Include(c => c.Ativofinanceiros)
@@ -367,82 +367,37 @@ namespace TrabalhoES2.Controllers
             {
                 return NotFound("Carteira não encontrada ou não pertence ao utilizador.");
             }
-            
-            // 1. Validações básicas
+
             if (dataFim <= dataInicio)
             {
                 TempData["Erro"] = "A data final deve ser posterior à data inicial";
                 return RedirectToAction(nameof(Index));
             }
-            
-            // 3. Filtrar ativos pelo período e calcular valores
+
             decimal lucroTotalBruto = 0;
             decimal impostosTotais = 0;
             int totalMeses = (dataFim.Year - dataInicio.Year) * 12 + dataFim.Month - dataInicio.Month;
 
             var ativosRelatorio = new List<dynamic>();
+
             foreach (var ativo in carteira.Ativofinanceiros)
             {
-                var dataInicioAtivo = ativo.Datainicio ?? DateOnly.FromDateTime(DateTime.MinValue);
-                if (dataInicioAtivo.ToDateTime(TimeOnly.MinValue) > dataFim || 
-                    (ativo.Duracaomeses.HasValue && dataInicioAtivo.ToDateTime(TimeOnly.MinValue).AddMonths(ativo.Duracaomeses.Value) < dataInicio))
-                {
+                var calculadora = AtivoCalculadoraFactory.Criar(ativo);
+
+                if (!calculadora.AtivoRelevante(dataInicio, dataFim))
                     continue;
-                }
 
-                decimal lucroBruto = 0, lucroLiquido=0, impostos=0, lucroMensalLiquido=0, lucroMensalBruto = 0;
-                
-                // Calcular para cada tipo de ativo
-                if (ativo.Depositoprazo != null)
-                {
-                    CalcularLucroDeposito(
-                        ativo.Depositoprazo,
-                        ativo.Percimposto ?? 0,
-                        dataInicioAtivo,
-                        ativo.Duracaomeses ?? 0,
-                        dataInicio,
-                        dataFim,
-                        out lucroBruto,
-                        out lucroLiquido,
-                        out impostos,
-                        out lucroMensalLiquido,
-                        out lucroMensalBruto
-                    );
-                }
-                else if (ativo.Imovelarrendado != null)
-                {
-                    CalcularLucroImovel(
-                        ativo.Imovelarrendado,
-                        ativo.Percimposto ?? 0,
-                        dataInicioAtivo,
-                        dataInicio,
-                        dataFim,
-                        out lucroBruto,
-                        out lucroLiquido,
-                        out impostos,
-                        out lucroMensalLiquido,
-                        out lucroMensalBruto
-                    );
-                }
-                // Armazenando os cálculos para cada ativo na lista
-                ativosRelatorio.Add(new
-                {
-                    TipoAtivo = ativo.Depositoprazo != null ? "Depósito a Prazo" :
-                        ativo.Imovelarrendado != null ? "Imóvel Arrendado" : "Outro",
-                    LucroBruto = lucroBruto,
-                    Impostos = impostos,
-                    LucroLiquido = lucroLiquido
-                });
+                dynamic relatorio = calculadora.CalcularLucro(dataInicio, dataFim);
 
-                lucroTotalBruto += lucroBruto;
-                impostosTotais += impostos;
+                ativosRelatorio.Add(relatorio);
+                lucroTotalBruto += relatorio.LucroBruto;
+                impostosTotais += relatorio.Impostos;
             }
 
             decimal lucroTotalLiquido = lucroTotalBruto - impostosTotais;
             decimal lucroMensalMedioBruto = totalMeses > 0 ? lucroTotalBruto / totalMeses : 0;
             decimal lucroMensalMedioLiquido = totalMeses > 0 ? lucroTotalLiquido / totalMeses : 0;
 
-            // Passando os dados para a View
             ViewBag.DataInicio = dataInicio;
             ViewBag.DataFim = dataFim;
             ViewBag.LucroTotalBruto = lucroTotalBruto;
@@ -453,102 +408,6 @@ namespace TrabalhoES2.Controllers
             ViewBag.AtivosRelatorio = ativosRelatorio;
 
             return View(carteira);
-        }
-        
-        
-        // Métodos auxiliares para cálculos (implementar na mesma classe do controlador)
-        private void CalcularLucroDeposito(
-            Depositoprazo deposito,
-            decimal percImposto,
-            DateOnly dataInicioAtivo,
-            int duracaoMeses,
-            DateTime inicioPeriodo,
-            DateTime fimPeriodo,
-            out decimal lucroBruto,
-            out decimal lucroDepoisImpostos,
-            out decimal impostos,
-            out decimal lucroMensalMedioDepoisImpostos, out decimal lucroMedioMensalBruto)
-        {
-            // Inicializar valores de retorno
-            lucroBruto = 0;
-            impostos = 0;
-            lucroDepoisImpostos = 0;
-            lucroMedioMensalBruto = 0;
-            lucroMensalMedioDepoisImpostos = 0;
-
-            // 1. Converter datas e verificar período válido
-            DateTime dtInicioAtivo = dataInicioAtivo.ToDateTime(TimeOnly.MinValue);
-            DateTime dtFimAtivo = dtInicioAtivo.AddMonths(duracaoMeses);
-
-            // 2. Calcular interseção de períodos
-            DateTime inicioCalculo = dtInicioAtivo < inicioPeriodo ? inicioPeriodo : dtInicioAtivo;
-            DateTime fimCalculo = dtFimAtivo > fimPeriodo ? fimPeriodo : dtFimAtivo;
-
-            if (fimCalculo <= inicioCalculo) return;
-
-            // 3. Calcular meses no período
-            int mesesNoPeriodo = ((fimCalculo.Year - inicioCalculo.Year) * 12) + fimCalculo.Month - inicioCalculo.Month;
-            if (mesesNoPeriodo <= 0) return;
-            
-            // 4. calculo do lucro de deposito a prazo
-            decimal taxaMensal = deposito.Taxajuroanual / 12 / 100;
-            decimal valorFinal = deposito.Valorinicial * (decimal)Math.Pow(1 + (double)taxaMensal, mesesNoPeriodo);
-            
-            lucroBruto = valorFinal - deposito.Valorinicial;
-            impostos = lucroBruto * ( percImposto / 100);
-            lucroDepoisImpostos = lucroBruto - impostos; // depois de impostos
-                // periodo mensal médio
-            lucroMedioMensalBruto = lucroBruto / mesesNoPeriodo;
-            lucroMensalMedioDepoisImpostos = lucroDepoisImpostos / mesesNoPeriodo; // depois de impostos
-        }
-        
-
-        private void CalcularLucroImovel(Imovelarrendado imovel, decimal percImposto, DateOnly dataInicioAtivo, DateTime inicioPeriodo, DateTime fimPeriodo,
-            out decimal lucroBruto, 
-            out decimal lucroDepoisImpostos, 
-            out decimal impostos, 
-            out decimal lucroMensalMedioDepoisImpostos, out decimal lucroMedioMensalBruto)
-        {
-            lucroBruto = 0;
-            lucroDepoisImpostos = 0;
-            impostos = 0;
-            lucroMensalMedioDepoisImpostos = 0;
-            lucroMedioMensalBruto = 0;
-
-            // 1. Converter datas e verificar período válido
-            DateTime dtInicioAtivo = dataInicioAtivo.ToDateTime(TimeOnly.MinValue);
-            DateTime dtFimAtivo = fimPeriodo; // Imóveis geralmente não têm data fim fixa
-
-            // 2. Calcular interseção de períodos
-            DateTime inicioCalculo = dtInicioAtivo < inicioPeriodo ? inicioPeriodo : dtInicioAtivo;
-            DateTime fimCalculo = dtFimAtivo > fimPeriodo ? fimPeriodo : dtFimAtivo;
-
-            if (fimCalculo <= inicioCalculo) return;
-
-            // 3. Calcular meses no período
-            int mesesNoPeriodo = ((fimCalculo.Year - inicioCalculo.Year) * 12) + 
-                fimCalculo.Month - inicioCalculo.Month;
-            if (mesesNoPeriodo <= 0) return;
-
-            // 4. Cálculo do lucro bruto (rendas - despesas)
-            decimal rendaBruta = imovel.Valorrenda * mesesNoPeriodo;
-            decimal despesaAnualRespetiva = (imovel.Valoranualdespesas / 12) * mesesNoPeriodo;
-            decimal despesaTotal = (imovel.Valormensalcondo * mesesNoPeriodo) + despesaAnualRespetiva;
-    
-            lucroBruto = rendaBruta - despesaTotal;
-            lucroMedioMensalBruto = lucroBruto / mesesNoPeriodo;
-            impostos = lucroBruto * (percImposto / 100);
-            
-            lucroDepoisImpostos = lucroBruto - impostos;
-            lucroMensalMedioDepoisImpostos = lucroDepoisImpostos / mesesNoPeriodo;
-        }
-        
-        private (decimal bruto, decimal imposto) CalcularLucroFundo(Fundoinvestimento fundo, decimal percImposto, DateTime inicio, DateTime fim)
-        {
-            // Implementar cálculo real baseado nas datas
-            decimal rendimento = fundo.Montanteinvestido * (fundo.Taxajuropdefeito / 100);
-            decimal imposto = rendimento * (percImposto / 100);
-            return (rendimento, imposto);
         }
     }
 }
