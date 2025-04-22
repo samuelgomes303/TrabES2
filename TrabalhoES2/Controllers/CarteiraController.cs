@@ -4,6 +4,7 @@ using TrabalhoES2.Models;
 using TrabalhoES2.utils;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using TrabalhoES2.Services;
 
 namespace TrabalhoES2.Controllers
 {
@@ -11,11 +12,14 @@ namespace TrabalhoES2.Controllers
     public class CarteiraController : Controller
     {
         private readonly projetoPraticoDbContext _context;
+        private readonly DepositoService _depositoService;
 
         public CarteiraController(projetoPraticoDbContext context)
         {
             _context = context;
-        }   
+            _depositoService = new DepositoService(_context); // Inicializa o serviço aqui
+        }
+  
 
         // GET: Carteira
         // Substitua o método Index por este
@@ -247,44 +251,16 @@ public async Task<IActionResult> AdicionarAtivo(int ativoId)
             return RedirectToAction(nameof(Index));
         }
         
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CriarDeposito(Depositoprazo deposito, Ativofinanceiro ativo)
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var carteira = await _context.Carteiras.FirstOrDefaultAsync(c => c.UtilizadorId == userId);
-
-            if (carteira == null) return NotFound();
-
-            // Forçar imposto de 28%
-            ativo.Percimposto = 28;
-            ativo.CarteiraId = carteira.CarteiraId;
-            ativo.Datainicio = DateOnly.FromDateTime(DateTime.Now);
-
-            _context.Ativofinanceiros.Add(ativo);
-            await _context.SaveChangesAsync();
-
-            // Cálculo do valor atual com imposto de 28%
-            var C = deposito.Valorinicial;
-            var TANB = deposito.Taxajuroanual / 100m;
-            var n = ativo.Duracaomeses ?? 0;
-            var t = 0.28m;
-
-            deposito.Valoratual = C + (C * TANB * n / 12m) * (1 - t);
-
-            // Atribuir o ID do ativo criado
-            deposito.AtivofinanceiroId = ativo.AtivofinanceiroId;
-
-            // Valores default ou ocultos
-            deposito.Nrconta = "auto";
-            deposito.Titular = "auto";
-
-            _context.Depositoprazos.Add(deposito);
-            await _context.SaveChangesAsync();
-
+            await _depositoService.CriarDepositoAsync(deposito, ativo, userId);
             return RedirectToAction("AtivosCatalogo");
         }
-
+        
 
         
         [HttpGet]
