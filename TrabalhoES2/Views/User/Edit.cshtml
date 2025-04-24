@@ -1,0 +1,124 @@
+﻿@model TrabalhoES2.Models.Utilizador
+
+@{
+    ViewData["Title"] = "Editar Utilizador";
+}
+
+<h1>Editar Utilizador</h1>
+
+@if (!string.IsNullOrEmpty(ViewBag.DebugMessage))
+{
+    <div class="alert alert-warning">
+        @ViewBag.DebugMessage
+    </div>
+}
+
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Edit" method="post">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <input type="hidden" name="Id" value="@Model.Id" />
+            <div class="form-group mb-3">
+                <label for="Nome" class="control-label">Nome</label>
+                <input id="Nome" name="Nome" class="form-control" value="@Model.Nome" required />
+                <span class="text-danger" id="Nome-error"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label for="Email" class="control-label">Email</label>
+                <input id="Email" name="Email" class="form-control" type="email" value="@Model.Email" required />
+                <span class="text-danger" id="Email-error"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label for="NewPassword" class="control-label">Nova Password (deixe em branco para manter a atual)</label>
+                <input id="NewPassword" name="NewPassword" class="form-control" type="password" data-val="false" />
+                <span class="text-danger" id="NewPassword-error"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label for="ConfirmNewPassword" class="control-label">Confirmar Nova Password</label>
+                <input id="ConfirmNewPassword" name="ConfirmNewPassword" class="form-control" type="password" data-val="false" />
+                <span class="text-danger" id="ConfirmNewPassword-error"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label for="TipoUtilizador" class="control-label">Tipo de Utilizador</label>
+                <select id="TipoUtilizador" name="TipoUtilizador" class="form-control" required>
+                    @foreach (var tipo in Enum.GetValues(typeof(TrabalhoES2.Models.Utilizador.TipoUtilizador)))
+                    {
+                        if (tipo.ToString() == Model.TpUtilizador.ToString())
+                        {
+                            <option value="@tipo" selected>@tipo</option>
+                        }
+                        else
+                        {
+                            <option value="@tipo">@tipo</option>
+                        }
+                    }
+                </select>
+                <span class="text-danger" id="TipoUtilizador-error"></span>
+            </div>
+            <div class="form-group mb-3">
+                <input type="submit" value="Guardar" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Voltar à Lista</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Desativar validação de formulário para os campos de senha
+            $('form').removeData('validator').removeData('unobtrusiveValidation');
+            $.validator.unobtrusive.parse('form');
+            
+            // Validação em tempo real para confirmação de password
+            $('#ConfirmNewPassword, #NewPassword').on('keyup', function() {
+                if ($('#NewPassword').val()) {
+                    if ($('#NewPassword').val() !== $('#ConfirmNewPassword').val()) {
+                        $('#ConfirmNewPassword-error').text('As passwords não coincidem');
+                        $('input[type="submit"]').prop('disabled', true);
+                    } else {
+                        $('#ConfirmNewPassword-error').text('');
+                        $('input[type="submit"]').prop('disabled', false);
+                    }
+                } else {
+                    $('#ConfirmNewPassword-error').text('');
+                    $('input[type="submit"]').prop('disabled', false);
+                }
+            });
+
+            // Validação personalizada
+            $('form').on('submit', function(e) {
+                var isValid = true;
+
+                // Validar nome e email (obrigatórios)
+                if ($('#Nome').val() === '') {
+                    $('#Nome-error').text('O campo Nome é obrigatório');
+                    isValid = false;
+                } else {
+                    $('#Nome-error').text('');
+                }
+
+                if ($('#Email').val() === '') {
+                    $('#Email-error').text('O campo Email é obrigatório');
+                    isValid = false;
+                } else {
+                    $('#Email-error').text('');
+                }
+
+                // Validar confirmação de password APENAS se uma nova password for fornecida
+                var newPassword = $('#NewPassword').val();
+                var confirmPassword = $('#ConfirmNewPassword').val();
+
+                if (newPassword && newPassword !== confirmPassword) {
+                    $('#ConfirmNewPassword-error').text('As passwords não coincidem');
+                    isValid = false;
+                } else {
+                    $('#ConfirmNewPassword-error').text('');
+                }
+
+                return isValid;
+            });
+        });
+    </script>
+}
