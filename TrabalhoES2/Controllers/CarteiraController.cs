@@ -104,6 +104,8 @@ namespace TrabalhoES2.Controllers
         public async Task<IActionResult> AtivosCatalogo()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            ViewBag.TpUtilizador = user?.TpUtilizador.ToString();
 
             var ativosCatalogo = await _context.Ativofinanceiros
                 .Include(a => a.Carteira)
@@ -358,8 +360,206 @@ namespace TrabalhoES2.Controllers
             return RedirectToAction(nameof(AtivosCatalogo));
         }
 
+        //Criar fundo 
+        
+        [HttpGet]
+        public async Task<IActionResult> CreateFundo()
+        {
+            ViewBag.Bancos = await _context.Bancos.ToListAsync();
+            return View();
+        }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateFundo(Fundoinvestimento fundo, Ativofinanceiro ativo)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var carteira = await _context.Carteiras.FirstOrDefaultAsync(c => c.UtilizadorId == userId);
 
+            if (carteira == null) return NotFound();
+
+            ativo.CarteiraId = carteira.CarteiraId;
+            ativo.Datainicio = DateOnly.FromDateTime(DateTime.Now);
+
+            _context.Ativofinanceiros.Add(ativo);
+            await _context.SaveChangesAsync();
+
+            fundo.AtivofinanceiroId = ativo.AtivofinanceiroId;
+
+            _context.Fundoinvestimentos.Add(fundo);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(AtivosCatalogo));
+        }
+    
+        //Editar Fundos
+        [HttpGet]
+        public async Task<IActionResult> EditFundo(int id)
+        {
+            var fundo = await _context.Fundoinvestimentos
+                .Include(f => f.Ativofinanceiro)
+                .FirstOrDefaultAsync(f => f.FundoinvestimentoId == id);
+
+            if (fundo == null) return NotFound();
+
+            ViewBag.Bancos = await _context.Bancos.ToListAsync();
+            ViewBag.Duracao = fundo.Ativofinanceiro.Duracaomeses;
+
+            return View(fundo);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditFundo(Fundoinvestimento fundo, int DuracaoMeses)
+        {
+            var ativo = await _context.Ativofinanceiros
+                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == fundo.AtivofinanceiroId);
+
+            if (ativo == null) return NotFound();
+
+            ativo.Duracaomeses = DuracaoMeses;
+
+            _context.Update(fundo);
+            _context.Update(ativo);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(AtivosCatalogo));
+        }
+        
+        //Eliminar Fundos
+        
+        [HttpGet]
+        public async Task<IActionResult> DeleteFundo(int id)
+        {
+            var fundo = await _context.Fundoinvestimentos
+                .Include(f => f.Ativofinanceiro)
+                .FirstOrDefaultAsync(f => f.FundoinvestimentoId == id);
+
+            if (fundo == null) return NotFound();
+
+            return View(fundo);
+        }
+
+        [HttpPost, ActionName("DeleteFundo")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteFundoConfirmed(int id)
+        {
+            var fundo = await _context.Fundoinvestimentos
+                .FirstOrDefaultAsync(f => f.FundoinvestimentoId == id);
+
+            if (fundo == null) return NotFound();
+
+            var ativo = await _context.Ativofinanceiros
+                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == fundo.AtivofinanceiroId);
+
+            _context.Fundoinvestimentos.Remove(fundo);
+            if (ativo != null)
+                _context.Ativofinanceiros.Remove(ativo);
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(AtivosCatalogo));
+        }
+        
+        //Crud imoveis
+        [HttpGet]
+        public async Task<IActionResult> CreateImovel()
+        {
+            ViewBag.Bancos = await _context.Bancos.ToListAsync();
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateImovel(Imovelarrendado imovel, Ativofinanceiro ativo)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var carteira = await _context.Carteiras.FirstOrDefaultAsync(c => c.UtilizadorId == userId);
+
+            if (carteira == null) return NotFound();
+
+            ativo.CarteiraId = carteira.CarteiraId;
+            ativo.Datainicio = DateOnly.FromDateTime(DateTime.Now);
+
+            _context.Ativofinanceiros.Add(ativo);
+            await _context.SaveChangesAsync();
+
+            imovel.AtivofinanceiroId = ativo.AtivofinanceiroId;
+
+            _context.Imovelarrendados.Add(imovel);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(AtivosCatalogo));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditImovel(int id)
+        {
+            var imovel = await _context.Imovelarrendados
+                .Include(i => i.Ativofinanceiro)
+                .FirstOrDefaultAsync(i => i.ImovelarrendadoId == id);
+
+            if (imovel == null) return NotFound();
+
+            ViewBag.Bancos = await _context.Bancos.ToListAsync();
+            ViewBag.Duracao = imovel.Ativofinanceiro.Duracaomeses;
+
+            return View(imovel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditImovel(Imovelarrendado imovel, int DuracaoMeses)
+        {
+            var ativo = await _context.Ativofinanceiros
+                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == imovel.AtivofinanceiroId);
+
+            if (ativo == null) return NotFound();
+
+            ativo.Duracaomeses = DuracaoMeses;
+
+            _context.Update(imovel);
+            _context.Update(ativo);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(AtivosCatalogo));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DeleteImovel(int id)
+        {
+            var imovel = await _context.Imovelarrendados
+                .Include(i => i.Ativofinanceiro)
+                .FirstOrDefaultAsync(i => i.ImovelarrendadoId == id);
+
+            if (imovel == null) return NotFound();
+
+            return View(imovel);
+        }
+
+        [HttpPost, ActionName("DeleteImovel")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteImovelConfirmed(int id)
+        {
+            var imovel = await _context.Imovelarrendados
+                .FirstOrDefaultAsync(i => i.ImovelarrendadoId == id);
+
+            if (imovel == null) return NotFound();
+
+            var ativo = await _context.Ativofinanceiros
+                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == imovel.AtivofinanceiroId);
+
+            _context.Imovelarrendados.Remove(imovel);
+            if (ativo != null)
+                _context.Ativofinanceiros.Remove(ativo);
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(AtivosCatalogo));
+        }
+
+        
+        
+        //Relatorio
         [HttpGet, ActionName("GerarRelatorio")]
         public async Task<IActionResult> GerarRelatorio(int id, DateTime dataInicio, DateTime dataFim)
         {

@@ -37,7 +37,7 @@ public static class SeedRoles
         if (createAdminResul == null)
         {
             await userManager.CreateAsync(adminUser, "Admin@123");
-            await userManager.AddToRoleAsync(adminUser, Utilizador.TipoUtilizador.Admin.ToString());
+            await userManager.AddToRoleAsync(adminUser, Utilizador.TipoUtilizador.Cliente.ToString());
         }
     }
 }
