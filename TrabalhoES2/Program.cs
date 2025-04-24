@@ -17,7 +17,6 @@ builder.Services.AddDbContext<projetoPraticoDbContext>(options =>
 // Configuração do Identity com chave primária int
 builder.Services.AddIdentity<Utilizador, IdentityRole<int>>()
     .AddEntityFrameworkStores<projetoPraticoDbContext>()
-    .AddDefaultUI()
     .AddDefaultTokenProviders();
     
 

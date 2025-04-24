@@ -1,0 +1,95 @@
+﻿@model TrabalhoES2.Models.Ativofinanceiro
+
+@{
+    ViewData["Title"] = "Remover Ativo";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<div class="alert alert-danger">
+    <h3>Tem certeza que deseja remover este ativo da sua carteira?</h3>
+    <p>Esta ação não pode ser desfeita.</p>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h4>Detalhes do Ativo</h4>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Tipo:</dt>
+            <dd class="col-sm-9">
+                @if (Model.Depositoprazo != null)
+                {
+                    <span>Depósito a Prazo</span>
+                }
+                else if (Model.Fundoinvestimento != null)
+                {
+                    <span>Fundo de Investimento</span>
+                }
+                else if (Model.Imovelarrendado != null)
+                {
+                    <span>Imóvel Arrendado</span>
+                }
+                else
+                {
+                    <span>Ativo Desconhecido</span>
+                }
+            </dd>
+
+            <dt class="col-sm-3">Duração:</dt>
+            <dd class="col-sm-9">@Model.Duracaomeses meses</dd>
+
+            <dt class="col-sm-3">Data de Início:</dt>
+            <dd class="col-sm-9">@Model.Datainicio?.ToString("dd/MM/yyyy")</dd>
+
+            @if (Model.Depositoprazo != null)
+            {
+                <dt class="col-sm-3">Taxa de Juro Anual:</dt>
+                <dd class="col-sm-9">@Model.Depositoprazo.Taxajuroanual%</dd>
+                
+                <dt class="col-sm-3">Valor Atual:</dt>
+                <dd class="col-sm-9">@Model.Depositoprazo.Valoratual.ToString("C")</dd>
+                
+                <dt class="col-sm-3">Banco:</dt>
+                <dd class="col-sm-9">@Model.Depositoprazo.Banco?.Nome</dd>
+            }
+            else if (Model.Fundoinvestimento != null)
+            {
+                <dt class="col-sm-3">Nome do Fundo:</dt>
+                <dd class="col-sm-9">@Model.Fundoinvestimento.Nome</dd>
+                
+                <dt class="col-sm-3">Montante Investido:</dt>
+                <dd class="col-sm-9">@Model.Fundoinvestimento.Montanteinvestido.ToString("C")</dd>
+                
+                <dt class="col-sm-3">Taxa de Juro por Defeito:</dt>
+                <dd class="col-sm-9">@Model.Fundoinvestimento.Taxajuropdefeito%</dd>
+                
+                <dt class="col-sm-3">Banco:</dt>
+                <dd class="col-sm-9">@Model.Fundoinvestimento.Banco?.Nome</dd>
+            }
+            else if (Model.Imovelarrendado != null)
+            {
+                <dt class="col-sm-3">Designação:</dt>
+                <dd class="col-sm-9">@Model.Imovelarrendado.Designacao</dd>
+                
+                <dt class="col-sm-3">Localização:</dt>
+                <dd class="col-sm-9">@Model.Imovelarrendado.Localizacao</dd>
+                
+                <dt class="col-sm-3">Valor do Imóvel:</dt>
+                <dd class="col-sm-9">@Model.Imovelarrendado.Valorimovel.ToString("C")</dd>
+                
+                <dt class="col-sm-3">Valor da Renda:</dt>
+                <dd class="col-sm-9">@Model.Imovelarrendado.Valorrenda.ToString("C")</dd>
+            }
+        </dl>
+    </div>
+</div>
+
+<form asp-action="Remover" method="post">
+    <input type="hidden" asp-for="AtivofinanceiroId" />
+    <div class="form-group">
+        <button type="submit" class="btn btn-danger">Confirmar Remoção</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>

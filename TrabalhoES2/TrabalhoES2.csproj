@@ -32,4 +32,8 @@
         <Folder Include="Views\Carteira\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="dotnet" />
+    </ItemGroup>
+
 </Project>

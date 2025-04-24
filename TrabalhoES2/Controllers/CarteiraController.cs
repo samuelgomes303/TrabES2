@@ -4,6 +4,8 @@ using TrabalhoES2.Models;
 using TrabalhoES2.utils;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using TrabalhoES2.Services.Relatorios;
+using TrabalhoES2.Services;
 
 namespace TrabalhoES2.Controllers
 {
@@ -11,121 +13,104 @@ namespace TrabalhoES2.Controllers
     public class CarteiraController : Controller
     {
         private readonly projetoPraticoDbContext _context;
+        private readonly DepositoService _depositoService;
 
         public CarteiraController(projetoPraticoDbContext context)
         {
             _context = context;
-        }   
+            _depositoService = new DepositoService(_context); // Inicializa o serviço aqui
+        }
 
         // GET: Carteira
         // Substitua o método Index por este
-    public async Task<IActionResult> Index()
-    {
-        // Obter o ID do utilizador atual
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-        
-        // Verificar se utilizador existe
-        var utilizador = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-        if (utilizador == null)
+        public async Task<IActionResult> Index()
         {
-            return NotFound("Utilizador não encontrado.");
-        }
+            // Obter o ID do utilizador atual
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-        // Verificar se o utilizador já tem uma carteira, se não, criar uma
-        var carteira = await _context.Carteiras
-            .Include(c => c.Ativofinanceiros)
-            .FirstOrDefaultAsync(c => c.UtilizadorId == userId);
-
-        if (carteira == null)
-        {
-            // Criar uma nova carteira para o utilizador
-            carteira = new Carteira
+            // Verificar se utilizador existe
+            var utilizador = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (utilizador == null)
             {
-                Nome = "Carteira Principal",
-                UtilizadorId = userId
-            };
-            _context.Carteiras.Add(carteira);
-            await _context.SaveChangesAsync();
+                return NotFound("Utilizador não encontrado.");
+            }
+
+            // Verificar se o utilizador já tem uma carteira, se não, criar uma
+            var carteira = await _context.Carteiras
+                .Include(c => c.Ativofinanceiros)
+                .FirstOrDefaultAsync(c => c.UtilizadorId == userId);
+
+            if (carteira == null)
+            {
+                // Criar uma nova carteira para o utilizador
+                carteira = new Carteira
+                {
+                    Nome = "Carteira Principal",
+                    UtilizadorId = userId
+                };
+                _context.Carteiras.Add(carteira);
+                await _context.SaveChangesAsync();
+                return View(carteira);
+            }
+
+            // Carregar explicitamente todos os ativos e seus relacionamentos
+            var ativos = await _context.Ativofinanceiros
+                .Where(a => a.CarteiraId == carteira.CarteiraId)
+                .ToListAsync();
+
+            // Limpar a lista de ativos da carteira para recarregar
+            carteira.Ativofinanceiros.Clear();
+
+            foreach (var ativo in ativos)
+            {
+                // Carregar depósito a prazo e seu banco
+                var deposito = await _context.Depositoprazos
+                    .Include(d => d.Banco)
+                    .FirstOrDefaultAsync(d => d.AtivofinanceiroId == ativo.AtivofinanceiroId);
+
+                if (deposito != null)
+                {
+                    ativo.Depositoprazo = deposito;
+                }
+
+                // Carregar fundo de investimento e seu banco
+                var fundo = await _context.Fundoinvestimentos
+                    .Include(f => f.Banco)
+                    .FirstOrDefaultAsync(f => f.AtivofinanceiroId == ativo.AtivofinanceiroId);
+
+                if (fundo != null)
+                {
+                    ativo.Fundoinvestimento = fundo;
+                }
+
+                // Carregar imóvel arrendado e seu banco
+                var imovel = await _context.Imovelarrendados
+                    .Include(i => i.Banco)
+                    .FirstOrDefaultAsync(i => i.AtivofinanceiroId == ativo.AtivofinanceiroId);
+
+                if (imovel != null)
+                {
+                    ativo.Imovelarrendado = imovel;
+                }
+
+                carteira.Ativofinanceiros.Add(ativo);
+            }
+
             return View(carteira);
         }
-
-        // Carregar explicitamente todos os ativos e seus relacionamentos
-        var ativos = await _context.Ativofinanceiros
-            .Where(a => a.CarteiraId == carteira.CarteiraId)
-            .ToListAsync();
-
-        // Limpar a lista de ativos da carteira para recarregar
-        carteira.Ativofinanceiros.Clear();
-        
-        foreach (var ativo in ativos)
-        {
-            // Carregar depósito a prazo e seu banco
-            var deposito = await _context.Depositoprazos
-                .Include(d => d.Banco)
-                .FirstOrDefaultAsync(d => d.AtivofinanceiroId == ativo.AtivofinanceiroId);
-            
-            if (deposito != null)
-            {
-                ativo.Depositoprazo = deposito;
-            }
-            
-            // Carregar fundo de investimento e seu banco
-            var fundo = await _context.Fundoinvestimentos
-                .Include(f => f.Banco)
-                .FirstOrDefaultAsync(f => f.AtivofinanceiroId == ativo.AtivofinanceiroId);
-            
-            if (fundo != null)
-            {
-                ativo.Fundoinvestimento = fundo;
-            }
-            
-            // Carregar imóvel arrendado e seu banco
-            var imovel = await _context.Imovelarrendados
-                .Include(i => i.Banco)
-                .FirstOrDefaultAsync(i => i.AtivofinanceiroId == ativo.AtivofinanceiroId);
-            
-            if (imovel != null)
-            {
-                ativo.Imovelarrendado = imovel;
-            }
-            
-            carteira.Ativofinanceiros.Add(ativo);
-        }
-
-        return View(carteira);
-    }
-    
-    [HttpGet]
-    public IActionResult CriarDeposito()
-    {
-        return View();
-    }
-
-    [HttpGet]
-    public IActionResult CriarFundo()
-    {
-        return View();
-    }
-
-    [HttpGet]
-    public IActionResult CriarImovel()
-    {
-        return View();
-    }
 
 
         // GET: Carteira/AtivosCatalogo
         public async Task<IActionResult> AtivosCatalogo()
         {
-            // Obter todos os ativos do catálogo (carteira sistema)
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
             var ativosCatalogo = await _context.Ativofinanceiros
-                .Where(a => a.CarteiraId == Constantes.CarteiraSistemaId)
-                .Include(a => a.Depositoprazo)
-                    .ThenInclude(d => d.Banco)
-                .Include(a => a.Fundoinvestimento)
-                    .ThenInclude(f => f.Banco)
-                .Include(a => a.Imovelarrendado)
-                    .ThenInclude(i => i.Banco)
+                .Include(a => a.Carteira)
+                .Where(a => a.Carteira.UtilizadorId == userId)
+                .Include(a => a.Depositoprazo).ThenInclude(d => d.Banco)
+                .Include(a => a.Fundoinvestimento).ThenInclude(f => f.Banco)
+                .Include(a => a.Imovelarrendado).ThenInclude(i => i.Banco)
                 .ToListAsync();
 
             return View(ativosCatalogo);
@@ -136,123 +121,80 @@ namespace TrabalhoES2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AdicionarAtivo(int ativoId)
         {
-            // Obter o ativo do catálogo
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var carteira = await _context.Carteiras.FirstOrDefaultAsync(c => c.UtilizadorId == userId);
+            if (carteira == null) return NotFound();
+
             var ativoOriginal = await _context.Ativofinanceiros
                 .Include(a => a.Depositoprazo)
-                    .ThenInclude(d => d.Banco)
                 .Include(a => a.Fundoinvestimento)
-                    .ThenInclude(f => f.Banco)
                 .Include(a => a.Imovelarrendado)
-                    .ThenInclude(i => i.Banco)
-                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == ativoId && a.CarteiraId == Constantes.CarteiraSistemaId);
+                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == ativoId && a.CarteiraId == carteira.CarteiraId);
 
             if (ativoOriginal == null)
-            {
                 return NotFound("Ativo não encontrado no catálogo.");
-            }
 
-            // Obter o ID do utilizador atual
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var utilizador = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            if (utilizador == null)
+            // Verificar se já existe um ativo igual na carteira do utilizador
+            bool jaExiste = await _context.Ativofinanceiros
+                .AnyAsync(a => a.CarteiraId == carteira.CarteiraId &&
+                               a.Depositoprazo != null &&
+                               ativoOriginal.Depositoprazo != null &&
+                               a.Depositoprazo.Taxajuroanual == ativoOriginal.Depositoprazo.Taxajuroanual &&
+                               a.Depositoprazo.Valorinicial == ativoOriginal.Depositoprazo.Valorinicial);
+
+            if (jaExiste)
             {
-                return NotFound("Utilizador não encontrado.");
+                TempData["Mensagem"] = "Este ativo já está na sua carteira.";
+                return RedirectToAction("Index");
             }
 
-            // Obter a carteira do utilizador
-            var carteira = await _context.Carteiras
-                .FirstOrDefaultAsync(c => c.UtilizadorId == userId);
-
-            if (carteira == null)
-            {
-                // Criar uma nova carteira se não existir
-                carteira = new Carteira
-                {
-                    Nome = "Carteira Principal",
-                    UtilizadorId = userId
-                };
-                _context.Carteiras.Add(carteira);
-                await _context.SaveChangesAsync();
-            }
-
-            // Criar cópia do ativo para a carteira do utilizador
             var novoAtivo = new Ativofinanceiro
             {
-                Percimposto = ativoOriginal.Percimposto,
+                CarteiraId = carteira.CarteiraId,
+                Datainicio = DateOnly.FromDateTime(DateTime.Now),
                 Duracaomeses = ativoOriginal.Duracaomeses,
-                Datainicio = DateOnly.FromDateTime(DateTime.Now),  // Data atual como data de início
-                CarteiraId = carteira.CarteiraId
+                Percimposto = ativoOriginal.Percimposto
             };
 
             _context.Ativofinanceiros.Add(novoAtivo);
             await _context.SaveChangesAsync();
 
-            // Copiar informações específicas baseadas no tipo de ativo
             if (ativoOriginal.Depositoprazo != null)
             {
-                var depositoOriginal = ativoOriginal.Depositoprazo;
-                var novoDeposito = new Depositoprazo
+                _context.Depositoprazos.Add(new Depositoprazo
                 {
                     AtivofinanceiroId = novoAtivo.AtivofinanceiroId,
-                    BancoId = depositoOriginal.BancoId,
-                    Nrconta = depositoOriginal.Nrconta,
-                    Titular = depositoOriginal.Titular,
-                    Taxajuroanual = depositoOriginal.Taxajuroanual,
-                    Valorinicial = depositoOriginal.Valorinicial,
-                    Valoratual = depositoOriginal.Valoratual
-                };
-                _context.Depositoprazos.Add(novoDeposito);
-            }
-            else if (ativoOriginal.Fundoinvestimento != null)
-            {
-                var fundoOriginal = ativoOriginal.Fundoinvestimento;
-                var novoFundo = new Fundoinvestimento
-                {
-                    AtivofinanceiroId = novoAtivo.AtivofinanceiroId,
-                    BancoId = fundoOriginal.BancoId,
-                    Nome = fundoOriginal.Nome,
-                    Montanteinvestido = fundoOriginal.Montanteinvestido,
-                    Taxajuropdefeito = fundoOriginal.Taxajuropdefeito
-                };
-                _context.Fundoinvestimentos.Add(novoFundo);
-            }
-            else if (ativoOriginal.Imovelarrendado != null)
-            {
-                var imovelOriginal = ativoOriginal.Imovelarrendado;
-                var novoImovel = new Imovelarrendado
-                {
-                    AtivofinanceiroId = novoAtivo.AtivofinanceiroId,
-                    BancoId = imovelOriginal.BancoId,
-                    Designacao = imovelOriginal.Designacao,
-                    Localizacao = imovelOriginal.Localizacao,
-                    Valorimovel = imovelOriginal.Valorimovel,
-                    Valorrenda = imovelOriginal.Valorrenda,
-                    Valormensalcondo = imovelOriginal.Valormensalcondo,
-                    Valoranualdespesas = imovelOriginal.Valoranualdespesas
-                };
-                _context.Imovelarrendados.Add(novoImovel);
+                    BancoId = ativoOriginal.Depositoprazo.BancoId,
+                    Nrconta = ativoOriginal.Depositoprazo.Nrconta,
+                    Titular = ativoOriginal.Depositoprazo.Titular,
+                    Taxajuroanual = ativoOriginal.Depositoprazo.Taxajuroanual,
+                    Valorinicial = ativoOriginal.Depositoprazo.Valorinicial,
+                    Valoratual = ativoOriginal.Depositoprazo.Valoratual
+                });
             }
 
             await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
+            TempData["Mensagem"] = "Ativo adicionado com sucesso!";
+            return RedirectToAction("Index");
         }
+
+
 
         // GET: Carteira/Remover/5
         public async Task<IActionResult> Remover(int id)
         {
             // Obter o ID do utilizador atual
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            
+
             // Verificar se o ativo pertence à carteira do utilizador
             var ativo = await _context.Ativofinanceiros
                 .Include(a => a.Carteira)
                 .Include(a => a.Depositoprazo)
-                    .ThenInclude(d => d.Banco)
+                .ThenInclude(d => d.Banco)
                 .Include(a => a.Fundoinvestimento)
-                    .ThenInclude(f => f.Banco)
+                .ThenInclude(f => f.Banco)
                 .Include(a => a.Imovelarrendado)
-                    .ThenInclude(i => i.Banco)
+                .ThenInclude(i => i.Banco)
                 .FirstOrDefaultAsync(a => a.AtivofinanceiroId == id);
 
             if (ativo == null)
@@ -270,41 +212,6 @@ namespace TrabalhoES2.Controllers
 
             return View(ativo);
         }
-        
-        // Delete AtivoFinanceiro
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EliminarConfirmado(int id)
-        {
-            // Busca o ativo apenas se estiver no catálogo (carteira sistema)
-            var ativo = await _context.Ativofinanceiros
-                .Include(a => a.Depositoprazo)
-                .Include(a => a.Fundoinvestimento)
-                .Include(a => a.Imovelarrendado)
-                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == id && a.CarteiraId == Constantes.CarteiraSistemaId);
-
-            if (ativo == null)
-            {
-                return NotFound("Ativo não encontrado no catálogo.");
-            }
-
-            // Remove dependências específicas
-            if (ativo.Depositoprazo != null)
-                _context.Depositoprazos.Remove(ativo.Depositoprazo);
-
-            if (ativo.Fundoinvestimento != null)
-                _context.Fundoinvestimentos.Remove(ativo.Fundoinvestimento);
-
-            if (ativo.Imovelarrendado != null)
-                _context.Imovelarrendados.Remove(ativo.Imovelarrendado);
-
-            _context.Ativofinanceiros.Remove(ativo);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(AtivosCatalogo));
-        }
-
-
 
         // POST: Carteira/Remover/5
         [HttpPost, ActionName("Remover")]
@@ -339,8 +246,182 @@ namespace TrabalhoES2.Controllers
             // Remover o ativo
             _context.Ativofinanceiros.Remove(ativo);
             await _context.SaveChangesAsync();
-            
+
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CriarDeposito(Depositoprazo deposito, Ativofinanceiro ativo)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            await _depositoService.CriarDepositoAsync(deposito, ativo, userId);
+            return RedirectToAction("AtivosCatalogo");
+        }
+
+
+
+        [HttpGet]
+        public async Task<IActionResult> Create()
+        {
+            ViewBag.Bancos = await _context.Bancos.ToListAsync();
+            return View();
+        }
+
+        // GET: Carteira/Edit/5
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var deposito = await _context.Depositoprazos
+                .Include(d => d.Ativofinanceiro)
+                .FirstOrDefaultAsync(d => d.DepositoprazoId == id);
+
+            if (deposito == null)
+            {
+                return NotFound();
+            }
+
+            ViewBag.Bancos = await _context.Bancos.ToListAsync();
+            ViewBag.Duracao = deposito.Ativofinanceiro.Duracaomeses;
+
+            return View(deposito);
+        }
+
+// POST: Carteira/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(Depositoprazo deposito, int DuracaoMeses)
+        {
+            var ativo = await _context.Ativofinanceiros
+                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == deposito.AtivofinanceiroId);
+
+            if (ativo == null)
+                return NotFound();
+
+            ativo.Duracaomeses = DuracaoMeses;
+
+            // Garantir valores obrigatórios para os campos que não estão no formulário
+            deposito.Nrconta ??= "auto";
+            deposito.Titular ??= "auto";
+
+            // Atualizar o valor atual com a fórmula
+            var C = deposito.Valorinicial;
+            var TANB = deposito.Taxajuroanual / 100m;
+            var n = DuracaoMeses;
+            var t = 0.28m;
+            deposito.Valoratual = C + (C * TANB * n / 12m) * (1 - t);
+
+            _context.Update(deposito);
+            _context.Update(ativo);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(AtivosCatalogo));
+        }
+
+
+
+        // GET: Carteira/Delete/5
+        [HttpGet]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var deposito = await _context.Depositoprazos
+                .Include(d => d.Ativofinanceiro)
+                .FirstOrDefaultAsync(d => d.DepositoprazoId == id);
+
+            if (deposito == null)
+            {
+                return NotFound();
+            }
+
+            return View(deposito);
+        }
+
+        // POST: Carteira/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var deposito = await _context.Depositoprazos
+                .FirstOrDefaultAsync(d => d.DepositoprazoId == id);
+
+            if (deposito == null)
+                return NotFound();
+
+            var ativo = await _context.Ativofinanceiros
+                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == deposito.AtivofinanceiroId);
+
+            _context.Depositoprazos.Remove(deposito);
+            if (ativo != null)
+                _context.Ativofinanceiros.Remove(ativo);
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(AtivosCatalogo));
+        }
+
+
+
+        [HttpGet, ActionName("GerarRelatorio")]
+        public async Task<IActionResult> GerarRelatorio(int id, DateTime dataInicio, DateTime dataFim)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            var carteira = await _context.Carteiras
+                .Include(c => c.Utilizador)
+                .Include(c => c.Ativofinanceiros)
+                .ThenInclude(a => a.Depositoprazo)
+                .ThenInclude(d => d.Banco)
+                .Include(c => c.Ativofinanceiros)
+                .ThenInclude(a => a.Fundoinvestimento)
+                .ThenInclude(f => f.Banco)
+                .Include(c => c.Ativofinanceiros)
+                .ThenInclude(a => a.Imovelarrendado)
+                .FirstOrDefaultAsync(c => c.CarteiraId == id && c.UtilizadorId == userId);
+
+            if (carteira == null)
+            {
+                return NotFound("Carteira não encontrada ou não pertence ao utilizador.");
+            }
+
+            if (dataFim <= dataInicio)
+            {
+                TempData["Erro"] = "A data final deve ser posterior à data inicial";
+                return RedirectToAction(nameof(Index));
+            }
+
+            decimal lucroTotalBruto = 0;
+            decimal impostosTotais = 0;
+            int totalMeses = (dataFim.Year - dataInicio.Year) * 12 + dataFim.Month - dataInicio.Month;
+
+            var ativosRelatorio = new List<dynamic>();
+
+            foreach (var ativo in carteira.Ativofinanceiros)
+            {
+                var calculadora = AtivoCalculadoraFactory.Criar(ativo);
+
+                if (!calculadora.AtivoRelevante(dataInicio, dataFim))
+                    continue;
+
+                dynamic relatorio = calculadora.CalcularLucro(dataInicio, dataFim);
+
+                ativosRelatorio.Add(relatorio);
+                lucroTotalBruto += relatorio.LucroBruto;
+                impostosTotais += relatorio.Impostos;
+            }
+
+            decimal lucroTotalLiquido = lucroTotalBruto - impostosTotais;
+            decimal lucroMensalMedioBruto = totalMeses > 0 ? lucroTotalBruto / totalMeses : 0;
+            decimal lucroMensalMedioLiquido = totalMeses > 0 ? lucroTotalLiquido / totalMeses : 0;
+
+            ViewBag.DataInicio = dataInicio;
+            ViewBag.DataFim = dataFim;
+            ViewBag.LucroTotalBruto = lucroTotalBruto;
+            ViewBag.ImpostosTotais = impostosTotais;
+            ViewBag.LucroTotalLiquido = lucroTotalLiquido;
+            ViewBag.LucroMensalMedioBruto = lucroMensalMedioBruto;
+            ViewBag.LucroMensalMedioLiquido = lucroMensalMedioLiquido;
+            ViewBag.AtivosRelatorio = ativosRelatorio;
+
+            return View(carteira);
         }
     }
 }

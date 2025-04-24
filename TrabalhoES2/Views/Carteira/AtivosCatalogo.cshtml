@@ -1,0 +1,81 @@
+﻿@model IEnumerable<TrabalhoES2.Models.Ativofinanceiro>
+
+@{
+    ViewData["Title"] = "Ativos Disponíveis";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<div class="mb-4 d-flex justify-content-between">
+    <a asp-action="Index" class="btn btn-secondary">Voltar para Minha Carteira</a>
+    <a asp-action="Create" class="btn btn-success">+ Novo Depósito a Prazo</a>
+</div>
+
+
+<div class="row">
+    @foreach (var ativo in Model)
+    {
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                @if (ativo.Depositoprazo != null)
+                {
+                <h5>Depósito a Prazo</h5>
+                }
+                else if (ativo.Fundoinvestimento != null)
+                {
+                <h5>Fundo de Investimento - @ativo.Fundoinvestimento.Nome</h5>
+                }
+                else if (ativo.Imovelarrendado != null)
+                {
+                <h5>Imóvel Arrendado - @ativo.Imovelarrendado.Designacao</h5>
+                }
+            </div>
+            <div class="card-body d-flex flex-column">
+                <ul class="list-group list-group-flush mb-3">
+                    <li class="list-group-item"><strong>Duração:</strong> @ativo.Duracaomeses meses</li>
+
+                    @if (ativo.Depositoprazo != null)
+                    {
+                    <li class="list-group-item"><strong>Taxa de Juro Anual:</strong> @ativo.Depositoprazo.Taxajuroanual%</li>
+                    <li class="list-group-item"><strong>Valor Inicial:</strong> @ativo.Depositoprazo.Valorinicial.ToString("C")</li>
+                    <li class="list-group-item"><strong>Valor Atual:</strong> @ativo.Depositoprazo.Valoratual.ToString("C")</li>
+                    <li class="list-group-item"><strong>Banco:</strong> @ativo.Depositoprazo.Banco?.Nome</li>
+                    }
+                    else if (ativo.Fundoinvestimento != null)
+                    {
+                    <li class="list-group-item"><strong>Banco:</strong> @ativo.Fundoinvestimento.Banco?.Nome</li>
+                    <li class="list-group-item"><strong>Montante Investido:</strong> @ativo.Fundoinvestimento.Montanteinvestido.ToString("C")</li>
+                    <li class="list-group-item"><strong>Taxa de Juro por Defeito:</strong> @ativo.Fundoinvestimento.Taxajuropdefeito%</li>
+                    }
+                    else if (ativo.Imovelarrendado != null)
+                    {
+                    <li class="list-group-item"><strong>Localização:</strong> @ativo.Imovelarrendado.Localizacao</li>
+                    <li class="list-group-item"><strong>Valor do Imóvel:</strong> @ativo.Imovelarrendado.Valorimovel.ToString("C")</li>
+                    <li class="list-group-item"><strong>Valor da Renda:</strong> @ativo.Imovelarrendado.Valorrenda.ToString("C")</li>
+                    <li class="list-group-item"><strong>Valor Mensal do Condomínio:</strong> @ativo.Imovelarrendado.Valormensalcondo.ToString("C")</li>
+                    <li class="list-group-item"><strong>Despesas Anuais:</strong> @ativo.Imovelarrendado.Valoranualdespesas.ToString("C")</li>
+                    }
+
+                    <li class="list-group-item"><strong>Imposto:</strong> @ativo.Percimposto%</li>
+                </ul>
+
+                <form asp-action="AdicionarAtivo" method="post" class="mt-auto">
+                    <input type="hidden" name="ativoId" value="@ativo.AtivofinanceiroId" />
+                    <button type="submit" class="btn btn-success w-100 mb-2">Adicionar à Carteira</button>
+                </form>
+
+                @if (ativo.Depositoprazo != null)
+                {
+                <div class="d-flex gap-2">
+                    <a asp-action="Edit" asp-route-id="@ativo.Depositoprazo.DepositoprazoId" class="btn btn-warning w-50">Editar</a>
+                    <a asp-action="Delete" asp-route-id="@ativo.Depositoprazo.DepositoprazoId" class="btn btn-danger w-50">Eliminar</a>
+                </div>
+                }
+
+            </div>
+        </div>
+    </div>
+    }
+
+</div>

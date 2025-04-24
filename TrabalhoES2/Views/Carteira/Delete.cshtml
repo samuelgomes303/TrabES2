@@ -1,0 +1,30 @@
+﻿@model TrabalhoES2.Models.Depositoprazo
+
+@{
+    ViewData["Title"] = "Eliminar Depósito a Prazo";
+}
+
+<h2 class="text-danger">Confirmar Eliminação</h2>
+<p>Tem a certeza que deseja eliminar este depósito a prazo?</p>
+
+<div class="card mb-4">
+    <div class="card-header"><strong>Detalhes</strong></div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-4">Valor Inicial:</dt>
+            <dd class="col-sm-8">@Model.Valorinicial.ToString("C")</dd>
+
+            <dt class="col-sm-4">Taxa de Juro Anual:</dt>
+            <dd class="col-sm-8">@Model.Taxajuroanual%</dd>
+
+            <dt class="col-sm-4">Valor Atual:</dt>
+            <dd class="col-sm-8">@Model.Valoratual.ToString("C")</dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="DepositoprazoId" />
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+    <a asp-action="AtivosCatalogo" class="btn btn-secondary">Cancelar</a>
+</form>

@@ -1,0 +1,58 @@
+﻿@model TrabalhoES2.Models.Carteira
+
+@{
+    ViewData["Title"] = "Relatório da Carteira";
+    var utilizador = Model.Utilizador;
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<h4>Utilizador: @utilizador?.Nome (@utilizador?.Email)</h4>
+<h5>Carteira ID: @Model.CarteiraId</h5>
+
+<hr />
+
+@if (ViewBag.AtivosRelatorio != null && ((List<dynamic>)ViewBag.AtivosRelatorio).Any())
+{
+    <div class="row">
+        @foreach (var ativo in ViewBag.AtivosRelatorio)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5>@ativo.TipoAtivo</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><strong>Lucro Bruto:</strong> @ativo.LucroBruto.ToString("C")</li>
+                            <li class="list-group-item"><strong>Impostos:</strong> @ativo.Impostos.ToString("C")</li>
+                            <li class="list-group-item"><strong>Lucro Líquido:</strong> @ativo.LucroLiquido.ToString("C")</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <p>Esta carteira não contém ativos financeiros.</p>
+}
+
+<hr />
+
+<h4>Totais:</h4>
+<ul class="list-group">
+    <li class="list-group-item"><strong>Lucro Total Bruto:</strong> @ViewBag.LucroTotalBruto.ToString("C")</li>
+    <li class="list-group-item"><strong>Impostos Totais:</strong> @ViewBag.ImpostosTotais.ToString("C")</li>
+    <li class="list-group-item"><strong>Lucro Total Líquido:</strong> @ViewBag.LucroTotalLiquido.ToString("C")</li>
+    <li class="list-group-item"><strong>Lucro Mensal Médio Bruto:</strong> @ViewBag.LucroMensalMedioBruto.ToString("C")</li>
+    <li class="list-group-item"><strong>Lucro Mensal Médio Líquido:</strong> @ViewBag.LucroMensalMedioLiquido.ToString("C")</li>
+</ul>
+
+<hr />
+
+<h4>Período:</h4>
+<p><strong>Data Início:</strong> @ViewBag.DataInicio.ToShortDateString()</p>
+<p><strong>Data Fim:</strong> @ViewBag.DataFim.ToShortDateString()</p>
+
