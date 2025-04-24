@@ -6,11 +6,11 @@
 }
 
 <h1>@ViewData["Title"]</h1>
+
 @if (TempData["Mensagem"] != null)
 {
-<div class="alert alert-info">@TempData["Mensagem"]</div>
+    <div class="alert alert-info">@TempData["Mensagem"]</div>
 }
-
 
 <div class="mb-4">
     <a asp-action="AtivosCatalogo" class="btn btn-primary">Ver Ativos Disponíveis</a>
@@ -18,7 +18,6 @@
 
 <form asp-action="GerarRelatorio" asp-controller="Carteira" method="get" class="mb-4">
     <input type="hidden" name="id" value="@Model.CarteiraId" />
-
     <div class="form-group row">
         <div class="col-md-3">
             <label for="dataInicio">Data Início</label>
@@ -34,6 +33,72 @@
     </div>
 </form>
 
+@if (Model.Ativofinanceiros.Count > 0)
+{
+    <!-- Formulário de pesquisa -->
+    <form asp-action="Index" method="get" class="mb-4">
+        <div class="form-row row">
+            <div class="col-md-4 mb-2">
+                <input
+                    type="text"
+                    name="searchString"
+                    class="form-control"
+                    placeholder="Pesquisar por Banco"
+                    value="@(ViewData["searchString"] ?? "")" />
+            </div>
+            <div class="col-md-3 mb-2">
+                @{
+                    var tipoSel = ViewData["tipo"] as string;
+                }
+                <select name="tipo" class="form-control">
+                    <option value="">Todos os tipos</option>
+                    @if (tipoSel == "DepositoPrazo")
+                    {
+                        <option value="DepositoPrazo" selected>Depósito a Prazo</option>
+                    }
+                    else
+                    {
+                        <option value="DepositoPrazo">Depósito a Prazo</option>
+                    }
+                    @if (tipoSel == "FundoInvestimento")
+                    {
+                        <option value="FundoInvestimento" selected>Fundo de Investimento</option>
+                    }
+                    else
+                    {
+                        <option value="FundoInvestimento">Fundo de Investimento</option>
+                    }
+                    @if (tipoSel == "ImovelArrendado")
+                    {
+                        <option value="ImovelArrendado" selected>Imóvel Arrendado</option>
+                    }
+                    else
+                    {
+                        <option value="ImovelArrendado">Imóvel Arrendado</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 mb-2">
+                <input
+                    type="number"
+                    step="0.01"
+                    name="montanteAplicado"
+                    class="form-control"
+                    placeholder="Montante aplicado mínimo"
+                    value="@(ViewData["montanteAplicado"] ?? "")" />
+            </div>
+            <div class="col-md-2 mb-2">
+                <button type="submit" class="btn btn-primary btn-block">Filtrar</button>
+                <a asp-action="Index" class="btn btn-secondary btn-block mt-1">Limpar</a>
+            </div>
+        </div>
+    </form>
+
+    @if (ViewBag.NoResults != null)
+    {
+        <div class="alert alert-warning">@ViewBag.NoResults</div>
+    }
+}
 
 @if (Model.Ativofinanceiros.Count == 0)
 {
@@ -50,15 +115,16 @@ else
         <div class="card-body">
             <table class="table table-striped">
                 <thead>
-                <tr>
-                    <th>Tipo</th>
-                    <th>Duração (meses)</th>
-                    <th>Data de Início</th>
-                    <th>Detalhes</th>
-                    <th>Valor</th>
-                    <th>Expectativa de Rendimento</th>
-                    <th>Ações</th>
-                </tr>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Duração (meses)</th>
+                        <th>Data de Início</th>
+                        <th>Detalhes</th>
+                        <th>Valor Inicial</th>
+                        <th>Valor Atual</th>
+                        <th>Expectativa de Rendimento</th>
+                        <th>Ações</th>
+                    </tr>
                 </thead>
                 <tbody>
                 @foreach (var ativo in Model.Ativofinanceiros)
@@ -87,29 +153,43 @@ else
                         <td>
                             @if (ativo.Depositoprazo != null)
                             {
-                                <span>Taxa: @ativo.Depositoprazo.Taxajuroanual%<br />Banco: @ativo.Depositoprazo.Banco?.Nome</span>
+                                <span>Taxa: @ativo.Depositoprazo.Taxajuroanual%<br/>Banco: @ativo.Depositoprazo.Banco?.Nome</span>
                             }
                             else if (ativo.Fundoinvestimento != null)
                             {
-                                <span>@ativo.Fundoinvestimento.Nome<br />Taxa: @ativo.Fundoinvestimento.Taxajuropdefeito%</span>
+                                <span>@ativo.Fundoinvestimento.Nome<br/>Banco: @ativo.Fundoinvestimento.Banco?.Nome</span>
                             }
                             else if (ativo.Imovelarrendado != null)
                             {
-                                <span>@ativo.Imovelarrendado.Designacao<br />@ativo.Imovelarrendado.Localizacao</span>
+                                <span>@ativo.Imovelarrendado.Designacao<br/>Banco: @ativo.Imovelarrendado.Banco?.Nome</span>
                             }
                         </td>
                         <td>
                             @if (ativo.Depositoprazo != null)
                             {
-                                <span>@ativo.Depositoprazo.Valoratual.ToString("C")</span>
+                                @ativo.Depositoprazo.Valorinicial.ToString("C")
                             }
                             else if (ativo.Fundoinvestimento != null)
                             {
-                                <span>@ativo.Fundoinvestimento.Montanteinvestido.ToString("C")</span>
+                                @ativo.Fundoinvestimento.Montanteinvestido.ToString("C")
                             }
                             else if (ativo.Imovelarrendado != null)
                             {
-                                <span>@ativo.Imovelarrendado.Valorimovel.ToString("C")</span>
+                                @ativo.Imovelarrendado.Valorimovel.ToString("C")
+                            }
+                        </td>
+                        <td>
+                            @if (ativo.Depositoprazo != null)
+                            {
+                                @ativo.Depositoprazo.Valoratual.ToString("C")
+                            }
+                            else if (ativo.Fundoinvestimento != null)
+                            {
+                                @ativo.Fundoinvestimento.Montanteinvestido.ToString("C")
+                            }
+                            else if (ativo.Imovelarrendado != null)
+                            {
+                                @ativo.Imovelarrendado.Valorimovel.ToString("C")
                             }
                         </td>
                         <td>
@@ -119,35 +199,24 @@ else
 
                                 if (ativo.Depositoprazo != null)
                                 {
-                                    // Cálculo para depósito a prazo (juros compostos simples)
                                     decimal valorInicial = ativo.Depositoprazo.Valorinicial;
                                     decimal taxaAnual = ativo.Depositoprazo.Taxajuroanual / 100;
-
                                     int duracaoAnos = (int)Math.Ceiling((ativo.Duracaomeses ?? 0) / 12.0m);
-
-
-
                                     valorExpectativa = valorInicial * (decimal)Math.Pow((double)(1 + taxaAnual), duracaoAnos) - valorInicial;
                                     periodoExpectativa = $"em {duracaoAnos} {(duracaoAnos == 1 ? "ano" : "anos")}";
                                 }
                                 else if (ativo.Fundoinvestimento != null)
                                 {
-                                    // Cálculo para fundo de investimento (estimativa baseada na taxa)
                                     decimal valorInvestido = ativo.Fundoinvestimento.Montanteinvestido;
                                     decimal taxaAnual = ativo.Fundoinvestimento.Taxajuropdefeito / 100;
-                                    // Para o depósito a prazo
                                     int duracaoAnos = (int)Math.Ceiling((ativo.Duracaomeses ?? 0) / 12.0m);
-
-
                                     valorExpectativa = valorInvestido * (decimal)Math.Pow((double)(1 + taxaAnual), duracaoAnos) - valorInvestido;
                                     periodoExpectativa = $"em {duracaoAnos} {(duracaoAnos == 1 ? "ano" : "anos")}";
                                 }
                                 else if (ativo.Imovelarrendado != null)
                                 {
-                                    // Cálculo para imóvel arrendado (renda anual menos despesas)
                                     decimal rendaAnual = ativo.Imovelarrendado.Valorrenda * 12;
                                     decimal despesasAnuais = ativo.Imovelarrendado.Valormensalcondo * 12 + ativo.Imovelarrendado.Valoranualdespesas;
-
                                     valorExpectativa = (rendaAnual - despesasAnuais);
                                     periodoExpectativa = "por ano";
                                 }

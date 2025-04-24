@@ -21,83 +21,98 @@ namespace TrabalhoES2.Controllers
             _depositoService = new DepositoService(_context); // Inicializa o serviço aqui
         }
 
-        // GET: Carteira
-        // Substitua o método Index por este
-        public async Task<IActionResult> Index()
+// GET: Carteira
+public async Task<IActionResult> Index(string searchString, string tipo, decimal? montanteAplicado)
+{
+    var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+    // (mesma lógica de criação/verificação de utilizador e carteira...)
+    var utilizador = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+    if (utilizador == null)
+        return NotFound("Utilizador não encontrado.");
+
+    var carteira = await _context.Carteiras
+        .Include(c => c.Ativofinanceiros)
+        .FirstOrDefaultAsync(c => c.UtilizadorId == userId);
+
+    if (carteira == null)
+    {
+        carteira = new Carteira { Nome = "Carteira Principal", UtilizadorId = userId };
+        _context.Carteiras.Add(carteira);
+        await _context.SaveChangesAsync();
+        return View(carteira);
+    }
+
+    // Carrega TODOS os ativos (relacionados) para, em caso de filtro sem correspondência, manter a lista inteira
+    var todosAtivos = await _context.Ativofinanceiros
+        .Where(a => a.CarteiraId == carteira.CarteiraId)
+        .Include(a => a.Depositoprazo).ThenInclude(d => d.Banco)
+        .Include(a => a.Fundoinvestimento).ThenInclude(f => f.Banco)
+        .Include(a => a.Imovelarrendado).ThenInclude(i => i.Banco)
+        .ToListAsync();
+
+    // Constrói a query para FILTROS
+    var ativosQuery = todosAtivos.AsQueryable();
+
+    // Filtrar por nome do Banco
+    if (!string.IsNullOrEmpty(searchString))
+    {
+        ativosQuery = ativosQuery.Where(a =>
+            (a.Depositoprazo != null && a.Depositoprazo.Banco.Nome.Contains(searchString)) ||
+            (a.Fundoinvestimento != null && a.Fundoinvestimento.Banco.Nome.Contains(searchString)) ||
+            (a.Imovelarrendado != null && a.Imovelarrendado.Banco.Nome.Contains(searchString))
+        );
+    }
+
+    // Filtrar por tipo
+    if (!string.IsNullOrEmpty(tipo))
+    {
+        switch (tipo)
         {
-            // Obter o ID do utilizador atual
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-
-            // Verificar se utilizador existe
-            var utilizador = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            if (utilizador == null)
-            {
-                return NotFound("Utilizador não encontrado.");
-            }
-
-            // Verificar se o utilizador já tem uma carteira, se não, criar uma
-            var carteira = await _context.Carteiras
-                .Include(c => c.Ativofinanceiros)
-                .FirstOrDefaultAsync(c => c.UtilizadorId == userId);
-
-            if (carteira == null)
-            {
-                // Criar uma nova carteira para o utilizador
-                carteira = new Carteira
-                {
-                    Nome = "Carteira Principal",
-                    UtilizadorId = userId
-                };
-                _context.Carteiras.Add(carteira);
-                await _context.SaveChangesAsync();
-                return View(carteira);
-            }
-
-            // Carregar explicitamente todos os ativos e seus relacionamentos
-            var ativos = await _context.Ativofinanceiros
-                .Where(a => a.CarteiraId == carteira.CarteiraId)
-                .ToListAsync();
-
-            // Limpar a lista de ativos da carteira para recarregar
-            carteira.Ativofinanceiros.Clear();
-
-            foreach (var ativo in ativos)
-            {
-                // Carregar depósito a prazo e seu banco
-                var deposito = await _context.Depositoprazos
-                    .Include(d => d.Banco)
-                    .FirstOrDefaultAsync(d => d.AtivofinanceiroId == ativo.AtivofinanceiroId);
-
-                if (deposito != null)
-                {
-                    ativo.Depositoprazo = deposito;
-                }
-
-                // Carregar fundo de investimento e seu banco
-                var fundo = await _context.Fundoinvestimentos
-                    .Include(f => f.Banco)
-                    .FirstOrDefaultAsync(f => f.AtivofinanceiroId == ativo.AtivofinanceiroId);
-
-                if (fundo != null)
-                {
-                    ativo.Fundoinvestimento = fundo;
-                }
-
-                // Carregar imóvel arrendado e seu banco
-                var imovel = await _context.Imovelarrendados
-                    .Include(i => i.Banco)
-                    .FirstOrDefaultAsync(i => i.AtivofinanceiroId == ativo.AtivofinanceiroId);
-
-                if (imovel != null)
-                {
-                    ativo.Imovelarrendado = imovel;
-                }
-
-                carteira.Ativofinanceiros.Add(ativo);
-            }
-
-            return View(carteira);
+            case "DepositoPrazo":
+                ativosQuery = ativosQuery.Where(a => a.Depositoprazo != null);
+                break;
+            case "FundoInvestimento":
+                ativosQuery = ativosQuery.Where(a => a.Fundoinvestimento != null);
+                break;
+            case "ImovelArrendado":
+                ativosQuery = ativosQuery.Where(a => a.Imovelarrendado != null);
+                break;
         }
+    }
+
+    // Filtrar por montante aplicado (depósito.VALORINICIAL e fundo.MONTANTEINVESTIDO)
+    if (montanteAplicado.HasValue)
+    {
+        ativosQuery = ativosQuery.Where(a =>
+            (a.Depositoprazo != null && a.Depositoprazo.Valorinicial >= montanteAplicado.Value) ||
+            (a.Fundoinvestimento != null && a.Fundoinvestimento.Montanteinvestido >= montanteAplicado.Value)
+        );
+    }
+
+    // Lista filtrada
+    var ativosFiltrados = ativosQuery.ToList();
+
+    // Se não houver correspondência, mostra mensagem e mantém lista completa
+    if (!ativosFiltrados.Any())
+    {
+        ViewBag.NoResults = "Nenhum ativo corresponde aos filtros informados.";
+        carteira.Ativofinanceiros = todosAtivos;
+    }
+    else
+    {
+        carteira.Ativofinanceiros = ativosFiltrados;
+    }
+
+    // Passa valores para manter preenchidos na view
+    ViewData["searchString"]    = searchString;
+    ViewData["tipo"]            = tipo;
+    ViewData["montanteAplicado"] = montanteAplicado?.ToString("F2");
+
+    return View(carteira);
+}
+
+
 
 
         // GET: Carteira/AtivosCatalogo
