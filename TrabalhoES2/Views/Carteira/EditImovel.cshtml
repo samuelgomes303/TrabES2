@@ -1,0 +1,55 @@
+@model TrabalhoES2.Models.Imovelarrendado
+@{
+ViewData["Title"] = "Editar Imóvel Arrendado";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="EditImovel" method="post">
+    <input type="hidden" asp-for="ImovelarrendadoId" />
+    <input type="hidden" asp-for="AtivofinanceiroId" />
+
+    <div class="form-group">
+        <label asp-for="Designacao"></label>
+        <input asp-for="Designacao" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Localizacao"></label>
+        <input asp-for="Localizacao" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="BancoId">Banco</label>
+        <select asp-for="BancoId" class="form-control" asp-items="@(new SelectList(ViewBag.Bancos, "BancoId", "Nome"))">
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Valorimovel"></label>
+        <input asp-for="Valorimovel" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Valorrenda"></label>
+        <input asp-for="Valorrenda" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Valormensalcondo"></label>
+        <input asp-for="Valormensalcondo" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Valoranualdespesas"></label>
+        <input asp-for="Valoranualdespesas" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label>Duração (meses)</label>
+        <input type="number" name="DuracaoMeses" class="form-control" value="@ViewBag.Duracao" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-action="AtivosCatalogo" class="btn btn-secondary">Cancelar</a>
+</form>

@@ -1,0 +1,41 @@
+@model TrabalhoES2.Models.Fundoinvestimento
+@{
+ViewData["Title"] = "Editar Fundo de Investimento";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="EditFundo" method="post">
+    <input type="hidden" asp-for="FundoinvestimentoId" />
+    <input type="hidden" asp-for="AtivofinanceiroId" />
+
+    <div class="form-group">
+        <label asp-for="Nome">Nome do Fundo</label>
+        <input asp-for="Nome" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="BancoId">Banco</label>
+        <select asp-for="BancoId" class="form-control" asp-items="@(new SelectList(ViewBag.Bancos, "BancoId", "Nome"))">
+            <option value="">Selecione um banco</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Montanteinvestido">Montante Investido</label>
+        <input asp-for="Montanteinvestido" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Taxajuropdefeito">Taxa de Juro (%)</label>
+        <input asp-for="Taxajuropdefeito" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label for="DuracaoMeses">Duração (meses)</label>
+        <input type="number" name="DuracaoMeses" class="form-control" value="@ViewBag.Duracao" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-action="AtivosCatalogo" class="btn btn-secondary">Cancelar</a>
+</form>

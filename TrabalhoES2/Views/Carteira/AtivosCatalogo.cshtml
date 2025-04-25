@@ -31,8 +31,9 @@ else
     @if (ViewBag.TpUtilizador == "Admin")
     {
         <a asp-action="CreateFundo" class="btn btn-primary">+ Novo Fundo de Investimento</a>
-        <a asp-action="CreateImovel" class="btn btn-info">+ Novo Imóvel Arrendado</a>
+        
     }
+    <a asp-action="CreateImovel" class="btn btn-info">+ Novo Imóvel Arrendado</a>
 </div>
 
 <div class="row">
@@ -111,13 +112,10 @@ else
                 }
                 else if (ativo.Imovelarrendado != null)
                 {
-                    if (ViewBag.TpUtilizador == "Admin")
-                    {
-                        <div class="d-flex gap-2">
-                            <a asp-action="EditImovel" asp-route-id="@ativo.Imovelarrendado.ImovelarrendadoId" class="btn btn-warning w-50">Editar</a>
-                            <a asp-action="DeleteImovel" asp-route-id="@ativo.Imovelarrendado.ImovelarrendadoId" class="btn btn-danger w-50">Eliminar</a>
-                        </div>
-                    }
+                    <div class="d-flex gap-2">
+                        <a asp-action="EditImovel" asp-route-id="@ativo.Imovelarrendado.ImovelarrendadoId" class="btn btn-warning w-50">Editar</a>
+                        <a asp-action="DeleteImovel" asp-route-id="@ativo.Imovelarrendado.ImovelarrendadoId" class="btn btn-danger w-50">Eliminar</a>
+                    </div>
                 }
             </div>
         </div>

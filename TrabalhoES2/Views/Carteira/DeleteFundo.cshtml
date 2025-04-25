@@ -1,0 +1,25 @@
+﻿@model TrabalhoES2.Models.Fundoinvestimento
+@{
+ViewData["Title"] = "Eliminar Fundo de Investimento";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<h4>Tem a certeza que deseja eliminar o fundo <strong>@Model.Nome</strong>?</h4>
+
+<dl class="row">
+    <dt class="col-sm-3">Banco</dt>
+    <dd class="col-sm-9">@Model.Banco?.Nome</dd>
+
+    <dt class="col-sm-3">Montante Investido</dt>
+    <dd class="col-sm-9">@Model.Montanteinvestido.ToString("C")</dd>
+
+    <dt class="col-sm-3">Taxa de Juro</dt>
+    <dd class="col-sm-9">@Model.Taxajuropdefeito%</dd>
+</dl>
+
+<form asp-action="DeleteFundoConfirmed" method="post">
+    <input type="hidden" asp-for="FundoinvestimentoId" />
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+    <a asp-action="AtivosCatalogo" class="btn btn-secondary">Cancelar</a>
+</form>

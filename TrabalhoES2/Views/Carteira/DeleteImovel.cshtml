@@ -1,0 +1,25 @@
+﻿@model TrabalhoES2.Models.Imovelarrendado
+@{
+ViewData["Title"] = "Eliminar Imóvel Arrendado";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<h4>Tem a certeza que deseja eliminar o imóvel <strong>@Model.Designacao</strong>?</h4>
+
+<dl class="row">
+    <dt class="col-sm-4">Localização</dt>
+    <dd class="col-sm-8">@Model.Localizacao</dd>
+
+    <dt class="col-sm-4">Valor do Imóvel</dt>
+    <dd class="col-sm-8">@Model.Valorimovel.ToString("C")</dd>
+
+    <dt class="col-sm-4">Valor da Renda</dt>
+    <dd class="col-sm-8">@Model.Valorrenda.ToString("C")</dd>
+</dl>
+
+<form asp-action="DeleteImovelConfirmed" method="post">
+    <input type="hidden" asp-for="ImovelarrendadoId" />
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+    <a asp-action="AtivosCatalogo" class="btn btn-secondary">Cancelar</a>
+</form>
