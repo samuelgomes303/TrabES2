@@ -18,7 +18,7 @@ ViewData["Title"] = "Eliminar Fundo de Investimento";
     <dd class="col-sm-9">@Model.Taxajuropdefeito%</dd>
 </dl>
 
-<form asp-action="DeleteFundoConfirmed" method="post">
+<form asp-action="DeleteFundo" method="post">
     <input type="hidden" asp-for="FundoinvestimentoId" />
     <button type="submit" class="btn btn-danger">Eliminar</button>
     <a asp-action="AtivosCatalogo" class="btn btn-secondary">Cancelar</a>

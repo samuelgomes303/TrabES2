@@ -18,7 +18,7 @@ ViewData["Title"] = "Eliminar Imóvel Arrendado";
     <dd class="col-sm-8">@Model.Valorrenda.ToString("C")</dd>
 </dl>
 
-<form asp-action="DeleteImovelConfirmed" method="post">
+<form asp-action="DeleteImovel" method="post">
     <input type="hidden" asp-for="ImovelarrendadoId" />
     <button type="submit" class="btn btn-danger">Eliminar</button>
     <a asp-action="AtivosCatalogo" class="btn btn-secondary">Cancelar</a>

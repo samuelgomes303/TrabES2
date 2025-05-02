@@ -35,6 +35,12 @@
                     <li class="nav-item">
                         <a class="nav-link text-dark" asp-area="" asp-controller="Carteira" asp-action="Index">Minha Carteira</a>
                     </li>
+                    @if (SignInManager.IsSignedIn(User) && User.IsInRole("Admin"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">Gestão de Utilizadores</a>
+                        </li>
+                    }
                 </ul>
 
                 <ul class="navbar-nav ms-auto">

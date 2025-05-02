@@ -1,0 +1,42 @@
+﻿@model TrabalhoES2.Models.Utilizador
+
+@{
+    ViewData["Title"] = "Eliminar Utilizador";
+}
+
+<h1>Eliminar Utilizador</h1>
+
+<div class="alert alert-danger">
+    <h3>Tem a certeza que deseja eliminar este utilizador?</h3>
+    <p>Esta ação não pode ser desfeita.</p>
+</div>
+
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Nome)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Nome)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Email)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Email)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.TpUtilizador)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.TpUtilizador)
+        </dd>
+    </dl>
+
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="Id" />
+        <input type="submit" value="Eliminar" class="btn btn-danger" /> |
+        <a asp-action="Index" class="btn btn-secondary">Voltar à Lista</a>
+    </form>
+</div>

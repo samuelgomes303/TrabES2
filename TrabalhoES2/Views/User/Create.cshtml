@@ -1,0 +1,101 @@
+﻿@model TrabalhoES2.Models.Utilizador
+
+@{
+    ViewData["Title"] = "Criar Utilizador";
+}
+
+<h1>Criar Novo Utilizador</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group mb-3">
+                <label for="Nome" class="control-label">Nome</label>
+                <input id="Nome" name="Nome" class="form-control" />
+                <span class="text-danger" id="Nome-error"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label for="Email" class="control-label">Email</label>
+                <input id="Email" name="Email" class="form-control" type="email" />
+                <span class="text-danger" id="Email-error"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label for="Password" class="control-label">Password</label>
+                <input id="Password" name="Password" class="form-control" type="password" />
+                <span class="text-danger" id="Password-error"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label for="ConfirmPassword" class="control-label">Confirmar Password</label>
+                <input id="ConfirmPassword" name="ConfirmPassword" class="form-control" type="password" />
+                <span class="text-danger" id="ConfirmPassword-error"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label for="TipoUtilizador" class="control-label">Tipo de Utilizador</label>
+                <select id="TipoUtilizador" name="TipoUtilizador" class="form-control" asp-items="ViewBag.TipoUtilizadorOptions">
+                </select>
+                <span class="text-danger" id="TipoUtilizador-error"></span>
+            </div>
+            <div class="form-group mb-3">
+                <input type="submit" value="Criar" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Voltar à Lista</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Validação do formulário
+            $('form').on('submit', function(e) {
+                // Validações
+                var isValid = true;
+
+                // Validar nome
+                if ($('#Nome').val() === '') {
+                    $('#Nome-error').text('O campo Nome é obrigatório');
+                    isValid = false;
+                } else {
+                    $('#Nome-error').text('');
+                }
+
+                // Validar email
+                if ($('#Email').val() === '') {
+                    $('#Email-error').text('O campo Email é obrigatório');
+                    isValid = false;
+                } else {
+                    $('#Email-error').text('');
+                }
+
+                // Validar password
+                if ($('#Password').val() === '') {
+                    $('#Password-error').text('O campo Password é obrigatório');
+                    isValid = false;
+                } else {
+                    $('#Password-error').text('');
+                }
+
+                // Validar confirmação de password
+                if ($('#Password').val() !== $('#ConfirmPassword').val()) {
+                    $('#ConfirmPassword-error').text('As passwords não coincidem');
+                    isValid = false;
+                } else {
+                    $('#ConfirmPassword-error').text('');
+                }
+
+                return isValid;
+            });
+
+            // Validação em tempo real para confirmação de password
+            $('#ConfirmPassword, #Password').on('keyup', function() {
+                if ($('#Password').val() !== $('#ConfirmPassword').val()) {
+                    $('#ConfirmPassword-error').text('As passwords não coincidem');
+                } else {
+                    $('#ConfirmPassword-error').text('');
+                }
+            });
+        });
+    </script>
+}
