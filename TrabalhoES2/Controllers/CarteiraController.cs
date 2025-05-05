@@ -132,8 +132,8 @@ public async Task<IActionResult> Index(string searchString, string tipo, decimal
                 .Include(a => a.Imovelarrendado).ThenInclude(i => i.Banco)
                 .Where(a =>
                     a.Carteira.UtilizadorId == userId || // ativos do próprio utilizador
-                    a.Carteira.Utilizador.TpUtilizador == Utilizador.TipoUtilizador.Admin ||
-                    a.Carteira.Utilizador.TpUtilizador == Utilizador.TipoUtilizador.UserManager)
+                    (a.Fundoinvestimento != null && a.Carteira.Utilizador.TpUtilizador == Utilizador.TipoUtilizador.Admin))
+
                 .ToListAsync();
 
             return View(ativosCatalogo);
@@ -149,16 +149,17 @@ public async Task<IActionResult> Index(string searchString, string tipo, decimal
             var carteira = await _context.Carteiras.FirstOrDefaultAsync(c => c.UtilizadorId == userId);
             if (carteira == null) return NotFound();
 
+            // ⚠️ Corrigido: agora busca o ativo SEM restringir à carteira do cliente
             var ativoOriginal = await _context.Ativofinanceiros
                 .Include(a => a.Depositoprazo)
                 .Include(a => a.Fundoinvestimento)
                 .Include(a => a.Imovelarrendado)
-                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == ativoId && a.CarteiraId == carteira.CarteiraId);
+                .FirstOrDefaultAsync(a => a.AtivofinanceiroId == ativoId);
 
             if (ativoOriginal == null)
                 return NotFound("Ativo não encontrado no catálogo.");
 
-            // Verificar se já existe um ativo igual na carteira do utilizador
+            // ⚠️ Verifica se já existe ativo semelhante na carteira do cliente
             bool jaExiste = await _context.Ativofinanceiros
                 .AnyAsync(a => a.CarteiraId == carteira.CarteiraId &&
                                a.Depositoprazo != null &&
@@ -172,6 +173,7 @@ public async Task<IActionResult> Index(string searchString, string tipo, decimal
                 return RedirectToAction("Index");
             }
 
+            // ✅ Cria o novo ativo para a carteira do utilizador
             var novoAtivo = new Ativofinanceiro
             {
                 CarteiraId = carteira.CarteiraId,
@@ -183,6 +185,7 @@ public async Task<IActionResult> Index(string searchString, string tipo, decimal
             _context.Ativofinanceiros.Add(novoAtivo);
             await _context.SaveChangesAsync();
 
+            // Cria o tipo de ativo correspondente (Depósito / Fundo / Imóvel)
             if (ativoOriginal.Depositoprazo != null)
             {
                 _context.Depositoprazos.Add(new Depositoprazo
@@ -196,11 +199,37 @@ public async Task<IActionResult> Index(string searchString, string tipo, decimal
                     Valoratual = ativoOriginal.Depositoprazo.Valoratual
                 });
             }
+            else if (ativoOriginal.Fundoinvestimento != null)
+            {
+                _context.Fundoinvestimentos.Add(new Fundoinvestimento
+                {
+                    AtivofinanceiroId = novoAtivo.AtivofinanceiroId,
+                    BancoId = ativoOriginal.Fundoinvestimento.BancoId,
+                    Nome = ativoOriginal.Fundoinvestimento.Nome,
+                    Taxajuropdefeito = ativoOriginal.Fundoinvestimento.Taxajuropdefeito,
+                    Montanteinvestido = ativoOriginal.Fundoinvestimento.Montanteinvestido
+                });
+            }
+            else if (ativoOriginal.Imovelarrendado != null)
+            {
+                _context.Imovelarrendados.Add(new Imovelarrendado
+                {
+                    AtivofinanceiroId = novoAtivo.AtivofinanceiroId,
+                    BancoId = ativoOriginal.Imovelarrendado.BancoId,
+                    Designacao = ativoOriginal.Imovelarrendado.Designacao,
+                    Localizacao = ativoOriginal.Imovelarrendado.Localizacao,
+                    Valorimovel = ativoOriginal.Imovelarrendado.Valorimovel,
+                    Valorrenda = ativoOriginal.Imovelarrendado.Valorrenda,
+                    Valormensalcondo = ativoOriginal.Imovelarrendado.Valormensalcondo,
+                    Valoranualdespesas = ativoOriginal.Imovelarrendado.Valoranualdespesas
+                });
+            }
 
             await _context.SaveChangesAsync();
             TempData["Mensagem"] = "Ativo adicionado com sucesso!";
             return RedirectToAction("Index");
         }
+
 
 
 
