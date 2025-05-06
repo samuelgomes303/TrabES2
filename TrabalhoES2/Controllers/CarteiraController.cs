@@ -353,10 +353,6 @@ public async Task<IActionResult> Index(string searchString, string tipo, decimal
 
             ativo.Duracaomeses = DuracaoMeses;
 
-            // Garantir valores obrigatórios para os campos que não estão no formulário
-            deposito.Nrconta ??= "auto";
-            deposito.Titular ??= "auto";
-
             // Atualizar o valor atual com a fórmula
             var C = deposito.Valorinicial;
             var TANB = deposito.Taxajuroanual / 100m;

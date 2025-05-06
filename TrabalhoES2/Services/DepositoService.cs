@@ -29,7 +29,6 @@ public class DepositoService
 
         deposito.AtivofinanceiroId = ativo.AtivofinanceiroId;
         deposito.Nrconta = "auto";
-        deposito.Titular = "auto";
 
         _context.Depositoprazos.Add(deposito);
         await _context.SaveChangesAsync();

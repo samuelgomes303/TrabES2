@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using TrabalhoES2.Models;
 using TrabalhoES2.utils;
@@ -9,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+builder.Services.AddTransient<IEmailSender, FakeEmailSender>();
 
 
 builder.Services.AddDbContext<projetoPraticoDbContext>(options =>
@@ -18,6 +20,7 @@ builder.Services.AddDbContext<projetoPraticoDbContext>(options =>
 builder.Services.AddIdentity<Utilizador, IdentityRole<int>>()
     .AddEntityFrameworkStores<projetoPraticoDbContext>()
     .AddDefaultTokenProviders();
+
     
 
 builder.Services.AddScoped<IUserClaimsPrincipalFactory<Utilizador>, AppUserClaimsPrincipalFactory>();
