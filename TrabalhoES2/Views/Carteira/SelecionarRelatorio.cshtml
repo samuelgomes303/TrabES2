@@ -1,0 +1,43 @@
+﻿@model TrabalhoES2.Models.Carteira
+
+@{
+    ViewData["Title"] = "Escolher Tipo de Relatório";
+}
+
+<h1>@ViewData["Title"]</h1>
+<h4>Utilizador: @Model.Utilizador?.Nome (@Model.Utilizador?.Email)</h4>
+<h5>Carteira ID: @Model.CarteiraId</h5>
+
+<hr/>
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="GerarRelatorio" asp-controller="Carteira" method="get">
+            <input type="hidden" name="id" value="@Model.CarteiraId" />
+            <div class="form-group">
+                <label>Data Início</label>
+                <input type="date" class="form-control" name="dataInicio" required />
+            </div>
+            <div class="form-group">
+                <label>Data Fim</label>
+                <input type="date" class="form-control" name="dataFim" required />
+            </div>
+            <button type="submit" class="btn btn-primary">Gerar Relatório de Lucros</button>
+        </form>
+    </div>
+
+    <div class="col-md-6">
+        <form asp-action="GerarRelatorioImpostos" asp-controller="Carteira" method="get">
+            <input type="hidden" name="id" value="@Model.CarteiraId" />
+            <div class="form-group">
+                <label>Data Início</label>
+                <input type="date" class="form-control" name="dataInicio" required />
+            </div>
+            <div class="form-group">
+                <label>Data Fim</label>
+                <input type="date" class="form-control" name="dataFim" required />
+            </div>
+            <button type="submit" class="btn btn-secondary">Gerar Relatório de Impostos</button>
+        </form>
+    </div>
+</div>
