@@ -18,7 +18,11 @@ namespace TrabalhoES2.Models
         public string Nome { get; set; } = null!;
 
         public TipoUtilizador TpUtilizador { get; set; }
-
+        public bool IsDeleted { get; set; } = false; 
+        public bool IsBlocked { get; set; } = false; 
+        public DateTime? DeletedAt { get; set; } 
+        public DateTime? BlockedAt { get; set; }
+        public DateTime? UnblockedAt { get; set; } 
         public virtual ICollection<Carteira> Carteiras { get; set; } = new List<Carteira>();
     }
 }

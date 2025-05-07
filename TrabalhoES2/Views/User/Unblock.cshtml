@@ -1,14 +1,14 @@
 ﻿@model TrabalhoES2.Models.Utilizador
 
 @{
-    ViewData["Title"] = "Remover Utilizador";
+    ViewData["Title"] = "Desbloquear Utilizador";
 }
 
-<h1>Remover Utilizador</h1>
+<h1>Desbloquear Utilizador</h1>
 
-<div class="alert alert-danger">
-    <h3>Tem a certeza que deseja remover este utilizador?</h3>
-    <p>Os dados do utilizador permanecerão na base de dados mas serão marcados como removidos e o utilizador não poderá mais aceder à aplicação.</p>
+<div class="alert alert-success">
+    <h3>Tem a certeza que deseja desbloquear este utilizador?</h3>
+    <p>O utilizador poderá voltar a aceder à aplicação após ser desbloqueado.</p>
 </div>
 
 <div>
@@ -32,21 +32,17 @@
         <dd class="col-sm-10">
             @Html.DisplayFor(model => model.TpUtilizador)
         </dd>
-        @if (Model.IsBlocked)
-        {
-            <dt class="col-sm-2">
-                Estado Atual
-            </dt>
-            <dd class="col-sm-10">
-                <span class="badge bg-warning text-dark">Bloqueado</span>
-                <small>(@Model.BlockedAt?.ToString("yyyy-MM-dd HH:mm"))</small>
-            </dd>
-        }
+        <dt class="col-sm-2">
+            Bloqueado Em
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.BlockedAt)
+        </dd>
     </dl>
 
-    <form asp-action="Delete">
+    <form asp-action="Unblock">
         <input type="hidden" asp-for="Id" />
-        <input type="submit" value="Remover" class="btn btn-danger" /> |
+        <input type="submit" value="Desbloquear" class="btn btn-success" /> |
         <a asp-action="Index" class="btn btn-secondary">Voltar à Lista</a>
     </form>
 </div>

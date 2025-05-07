@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TrabalhoES2.Models;
+using TrabalhoES2.Services; // Adicione esta linha
 using TrabalhoES2.utils;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,22 +10,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
-
 builder.Services.AddDbContext<projetoPraticoDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Configuração do Identity com chave primária int
 builder.Services.AddIdentity<Utilizador, IdentityRole<int>>()
     .AddEntityFrameworkStores<projetoPraticoDbContext>()
-    .AddDefaultTokenProviders();
-    
+    .AddDefaultTokenProviders()
+    .AddSignInManager<CustomSignInManager>(); // Adicione esta linha
 
 builder.Services.AddScoped<IUserClaimsPrincipalFactory<Utilizador>, AppUserClaimsPrincipalFactory>();
 
-
 var app = builder.Build();
-
-// Inicialização de roles e usuários
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -42,7 +38,6 @@ using (var scope = app.Services.CreateScope())
     var userManager = services.GetRequiredService<UserManager<Utilizador>>();
     await SeedRoles.SeedAsync(services, roleManager, userManager); 
 }
-
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

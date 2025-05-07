@@ -24,10 +24,21 @@ namespace TrabalhoES2.Controllers
         }
 
         // GET: User
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(bool includeDeleted = false)
         {
-            // Listar todos os utilizadores
-            var users = await _context.Utilizadors.ToListAsync();
+            // Listar utilizadores, filtrando os deletados se necessário
+            IQueryable<Utilizador> query = _context.Utilizadors;
+            
+            if (!includeDeleted)
+            {
+                query = query.Where(u => !u.IsDeleted);
+            }
+            
+            var users = await query.ToListAsync();
+            
+            // Passar a flag para a view
+            ViewBag.IncludeDeleted = includeDeleted;
+            
             return View(users);
         }
 
@@ -82,7 +93,9 @@ namespace TrabalhoES2.Controllers
                     UserName = Email,
                     Email = Email,
                     Nome = Nome,
-                    TpUtilizador = TipoUtilizador
+                    TpUtilizador = TipoUtilizador,
+                    IsDeleted = false,
+                    IsBlocked = false
                 };
 
                 var result = await _userManager.CreateAsync(user, Password);
@@ -299,9 +312,87 @@ namespace TrabalhoES2.Controllers
             var user = await _context.Utilizadors.FindAsync(id);
             if (user != null)
             {
-                _context.Utilizadors.Remove(user);
+                // Soft delete em vez de remover definitivamente
+                user.IsDeleted = true;
+                user.DeletedAt = DateTime.UtcNow;
+                
+                _context.Update(user);
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Utilizador eliminado com sucesso!";
+                TempData["SuccessMessage"] = "Utilizador removido com sucesso!";
+            }
+            
+            return RedirectToAction(nameof(Index));
+        }
+
+        // GET: User/Block/5
+        public async Task<IActionResult> Block(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var user = await _context.Utilizadors
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return View(user);
+        }
+
+        // POST: User/Block/5
+        [HttpPost, ActionName("Block")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BlockConfirmed(int id)
+        {
+            var user = await _context.Utilizadors.FindAsync(id);
+            if (user != null)
+            {
+                user.IsBlocked = true;
+                user.BlockedAt = DateTime.UtcNow;
+                
+                _context.Update(user);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Utilizador bloqueado com sucesso!";
+            }
+            
+            return RedirectToAction(nameof(Index));
+        }
+
+        // GET: User/Unblock/5
+        public async Task<IActionResult> Unblock(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var user = await _context.Utilizadors
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return View(user);
+        }
+
+        // POST: User/Unblock/5
+        [HttpPost, ActionName("Unblock")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UnblockConfirmed(int id)
+        {
+            var user = await _context.Utilizadors.FindAsync(id);
+            if (user != null)
+            {
+                user.IsBlocked = false;
+                user.UnblockedAt = DateTime.UtcNow;
+                
+                _context.Update(user);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Utilizador desbloqueado com sucesso!";
             }
             
             return RedirectToAction(nameof(Index));
