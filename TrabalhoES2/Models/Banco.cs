@@ -13,5 +13,6 @@ public partial class Banco
 
     public virtual ICollection<Fundoinvestimento> Fundoinvestimentos { get; set; } = new List<Fundoinvestimento>();
 
-    public virtual Imovelarrendado? Imovelarrendado { get; set; }
+    public virtual ICollection<Imovelarrendado> Imovelarrendados { get; set; } = new List<Imovelarrendado>();
+
 }

@@ -188,10 +188,12 @@ public partial class projetoPraticoDbContext : IdentityDbContext<Utilizador, Ide
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("imovelarrendado_ativofinanceiro_id_fkey");
 
-            entity.HasOne(d => d.Banco).WithOne(p => p.Imovelarrendado)
-                .HasForeignKey<Imovelarrendado>(d => d.BancoId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+            entity.HasOne(d => d.Banco)
+                .WithMany(p => p.Imovelarrendados)
+                .HasForeignKey(d => d.BancoId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("imovelarrendado_banco_id_fkey");
+
         });
 
         modelBuilder.Entity<Utilizador>(entity =>
