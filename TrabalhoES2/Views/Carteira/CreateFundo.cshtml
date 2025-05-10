@@ -33,10 +33,12 @@
         <input type="number" name="ativo.Duracaomeses" class="form-control" required />
     </div>
 
-    <div class="form-group">
-        <label for="Percimposto">Percentual de Imposto (%)</label>
-        <input type="number" name="ativo.Percimposto" class="form-control" required />
+    <div class="form-group mb-3">
+        <label>Imposto (%)</label>
+        <input type="text" class="form-control" value="28%" readonly />
+        <input type="hidden" name="ativo.Percimposto" value="28" />
     </div>
+
 
     <button type="submit" class="btn btn-success">Criar</button>
     <a asp-action="AtivosCatalogo" class="btn btn-secondary">Cancelar</a>

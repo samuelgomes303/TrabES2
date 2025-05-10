@@ -194,33 +194,34 @@ else
                         </td>
                         <td>
                             @{
-                                decimal valorExpectativa = 0;
-                                string periodoExpectativa = "";
+                            decimal valorExpectativa = 0;
+                            string periodoExpectativa = "";
 
-                                if (ativo.Depositoprazo != null)
-                                {
-                                    decimal valorInicial = ativo.Depositoprazo.Valorinicial;
-                                    decimal taxaAnual = ativo.Depositoprazo.Taxajuroanual / 100;
-                                    int duracaoAnos = (int)Math.Ceiling((ativo.Duracaomeses ?? 0) / 12.0m);
-                                    valorExpectativa = valorInicial * (decimal)Math.Pow((double)(1 + taxaAnual), duracaoAnos) - valorInicial;
-                                    periodoExpectativa = $"em {duracaoAnos} {(duracaoAnos == 1 ? "ano" : "anos")}";
-                                }
-                                else if (ativo.Fundoinvestimento != null)
-                                {
-                                    decimal valorInvestido = ativo.Fundoinvestimento.Montanteinvestido;
-                                    decimal taxaAnual = ativo.Fundoinvestimento.Taxajuropdefeito / 100;
-                                    int duracaoAnos = (int)Math.Ceiling((ativo.Duracaomeses ?? 0) / 12.0m);
-                                    valorExpectativa = valorInvestido * (decimal)Math.Pow((double)(1 + taxaAnual), duracaoAnos) - valorInvestido;
-                                    periodoExpectativa = $"em {duracaoAnos} {(duracaoAnos == 1 ? "ano" : "anos")}";
-                                }
-                                else if (ativo.Imovelarrendado != null)
-                                {
-                                    decimal rendaAnual = ativo.Imovelarrendado.Valorrenda * 12;
-                                    decimal despesasAnuais = ativo.Imovelarrendado.Valormensalcondo * 12 + ativo.Imovelarrendado.Valoranualdespesas;
-                                    valorExpectativa = (rendaAnual - despesasAnuais);
-                                    periodoExpectativa = "por ano";
-                                }
+                            if (ativo.Depositoprazo != null)
+                            {
+                            decimal valorAtual = ativo.Depositoprazo.Valoratual;
+                            decimal taxaAnual = ativo.Depositoprazo.Taxajuroanual / 100;
+                            int duracaoAnos = (int)Math.Ceiling((ativo.Duracaomeses ?? 0) / 12.0m);
+                            valorExpectativa = valorAtual * (decimal)Math.Pow((double)(1 + taxaAnual), duracaoAnos) - valorAtual;
+                            periodoExpectativa = $"em {duracaoAnos} {(duracaoAnos == 1 ? "ano" : "anos")}";
                             }
+                            else if (ativo.Fundoinvestimento != null)
+                            {
+                            decimal valorAtual = ativo.Fundoinvestimento.Valoratual;
+                            decimal taxaAnual = ativo.Fundoinvestimento.Taxajuropdefeito / 100;
+                            int duracaoAnos = (int)Math.Ceiling((ativo.Duracaomeses ?? 0) / 12.0m);
+                            valorExpectativa = valorAtual * (decimal)Math.Pow((double)(1 + taxaAnual), duracaoAnos) - valorAtual;
+                            periodoExpectativa = $"em {duracaoAnos} {(duracaoAnos == 1 ? "ano" : "anos")}";
+                            }
+                            else if (ativo.Imovelarrendado != null)
+                            {
+                            decimal rendaAnual = ativo.Imovelarrendado.Valorrenda * 12;
+                            decimal despesasAnuais = ativo.Imovelarrendado.Valormensalcondo * 12 + ativo.Imovelarrendado.Valoranualdespesas;
+                            valorExpectativa = (rendaAnual - despesasAnuais);
+                            periodoExpectativa = "por ano";
+                            }
+                            }
+
 
                             @if (valorExpectativa > 0)
                             {

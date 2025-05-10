@@ -14,7 +14,9 @@ public partial class Fundoinvestimento
     public decimal Montanteinvestido { get; set; }
 
     public decimal Taxajuropdefeito { get; set; }
-
+    
+    public decimal Valoratual { get; set; } // ✅ NOVO
+    
     public int AtivofinanceiroId { get; set; }
 
     public virtual Ativofinanceiro Ativofinanceiro { get; set; } = null!;

@@ -141,6 +141,10 @@ public partial class projetoPraticoDbContext : IdentityDbContext<Utilizador, Ide
                 .HasPrecision(15, 2)
                 .HasColumnName("montanteinvestido");
             entity.Property(e => e.Nome).HasColumnName("nome");
+            entity.Property(e => e.Valoratual)
+                .HasPrecision(15, 2)
+                .HasColumnName("valoratual");
+
             entity.Property(e => e.Taxajuropdefeito)
                 .HasPrecision(5, 2)
                 .HasColumnName("taxajuropdefeito");

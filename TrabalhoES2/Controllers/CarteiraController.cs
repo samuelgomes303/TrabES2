@@ -14,11 +14,13 @@ namespace TrabalhoES2.Controllers
     {
         private readonly projetoPraticoDbContext _context;
         private readonly DepositoService _depositoService;
+        private readonly FundoService _fundoService;
 
         public CarteiraController(projetoPraticoDbContext context)
         {
             _context = context;
             _depositoService = new DepositoService(_context); // Inicializa o serviço aqui
+            _fundoService = new FundoService(_context);
         }
 
 // GET: Carteira
@@ -425,23 +427,10 @@ public async Task<IActionResult> Index(string searchString, string tipo, decimal
         public async Task<IActionResult> CreateFundo(Fundoinvestimento fundo, Ativofinanceiro ativo)
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var carteira = await _context.Carteiras.FirstOrDefaultAsync(c => c.UtilizadorId == userId);
-
-            if (carteira == null) return NotFound();
-
-            ativo.CarteiraId = carteira.CarteiraId;
-            ativo.Datainicio = DateOnly.FromDateTime(DateTime.Now);
-
-            _context.Ativofinanceiros.Add(ativo);
-            await _context.SaveChangesAsync();
-
-            fundo.AtivofinanceiroId = ativo.AtivofinanceiroId;
-
-            _context.Fundoinvestimentos.Add(fundo);
-            await _context.SaveChangesAsync();
-
+            await _fundoService.CriarFundoAsync(fundo, ativo, userId);
             return RedirectToAction(nameof(AtivosCatalogo));
         }
+
     
         //Editar Fundos
         [HttpGet]

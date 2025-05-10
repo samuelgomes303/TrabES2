@@ -17,7 +17,7 @@ namespace TrabalhoES2.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.3")
+                .HasAnnotation("ProductVersion", "8.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tipoativofinanceiro", new[] { "DepositoPrazo", "ImovelArrendado", "FundoInvestimento" });
@@ -322,6 +322,11 @@ namespace TrabalhoES2.Migrations
                         .HasColumnType("numeric(5,2)")
                         .HasColumnName("taxajuropdefeito");
 
+                    b.Property<decimal>("Valoratual")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)")
+                        .HasColumnName("valoratual");
+
                     b.HasKey("FundoinvestimentoId")
                         .HasName("fundoinvestimento_pkey");
 
@@ -594,8 +599,9 @@ namespace TrabalhoES2.Migrations
                         .HasConstraintName("imovelarrendado_ativofinanceiro_id_fkey");
 
                     b.HasOne("TrabalhoES2.Models.Banco", "Banco")
-                        .WithOne("Imovelarrendado")
-                        .HasForeignKey("TrabalhoES2.Models.Imovelarrendado", "BancoId")
+                        .WithMany("Imovelarrendados")
+                        .HasForeignKey("BancoId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("imovelarrendado_banco_id_fkey");
 
@@ -619,7 +625,7 @@ namespace TrabalhoES2.Migrations
 
                     b.Navigation("Fundoinvestimentos");
 
-                    b.Navigation("Imovelarrendado");
+                    b.Navigation("Imovelarrendados");
                 });
 
             modelBuilder.Entity("TrabalhoES2.Models.Carteira", b =>
