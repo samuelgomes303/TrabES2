@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TrabalhoES2.Models;
+using TrabalhoES2.utils;
 
 namespace TrabalhoES2.Services;
 
@@ -19,25 +20,23 @@ public class DepositoService
         if (carteira == null) throw new Exception("Carteira não encontrada");
 
         ativo.CarteiraId = carteira.CarteiraId;
-        ativo.Percimposto = 28;
-        ativo.Datainicio = DateOnly.FromDateTime(DateTime.Now);
+        ativo.Datainicio = DateOnly.FromDateTime(DateTime.Now); // assegura que temos uma data válida
 
         _context.Ativofinanceiros.Add(ativo);
         await _context.SaveChangesAsync();
-        
-        deposito.Valoratual = CalcularValorAtual(deposito.Valorinicial, deposito.Taxajuroanual, ativo.Duracaomeses ?? 0);
 
         deposito.AtivofinanceiroId = ativo.AtivofinanceiroId;
-        deposito.Nrconta = "auto";
-        deposito.Titular = "auto";
+    
+        // Aqui vamos calcular o valor atual corretamente
+        deposito.Valoratual = InvestimentoUtils.CalcularValorAtualComJuros(
+            deposito.Valorinicial,
+            deposito.Taxajuroanual,
+            ativo.Datainicio.Value,
+            ativo.Percimposto.Value
+        );
 
         _context.Depositoprazos.Add(deposito);
         await _context.SaveChangesAsync();
     }
-    private decimal CalcularValorAtual(decimal C, decimal taxaAnual, int meses)
-    {
-        var TANB = taxaAnual / 100m;
-        var t = 0.28m;
-        return C + (C * TANB * meses / 12m) * (1 - t);
-    }
+
 }

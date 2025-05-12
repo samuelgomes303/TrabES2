@@ -32,6 +32,9 @@ public partial class projetoPraticoDbContext : IdentityDbContext<Utilizador, Ide
     public virtual DbSet<Imovelarrendado> Imovelarrendados { get; set; }
 
     public virtual DbSet<Utilizador> Utilizadors { get; set; }
+    
+    public virtual DbSet<FundoCompra> FundoCompras { get; set; }
+
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -157,6 +160,12 @@ public partial class projetoPraticoDbContext : IdentityDbContext<Utilizador, Ide
             entity.HasOne(d => d.Banco).WithMany(p => p.Fundoinvestimentos)
                 .HasForeignKey(d => d.BancoId)
                 .HasConstraintName("fundoinvestimento_banco_id_fkey");
+            
+            entity.Property(e => e.Quantidade)
+                .HasPrecision(10, 2)
+                .HasColumnName("quantidade")
+                .HasDefaultValue(1);
+
         });
 
         modelBuilder.Entity<Imovelarrendado>(entity =>
@@ -224,6 +233,20 @@ public partial class projetoPraticoDbContext : IdentityDbContext<Utilizador, Ide
                 .HasForeignKey(c => c.UtilizadorId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+        modelBuilder.Entity<FundoCompra>(entity =>
+        {
+            entity.HasKey(e => e.FundoCompraId);
+
+            entity.HasOne(e => e.Fundoinvestimento)
+                .WithMany(f => f.FundoCompras)
+                .HasForeignKey(e => e.FundoinvestimentoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.ValorPorUnidade).HasPrecision(15, 2);
+            entity.Property(e => e.DataCompra);
+        });
+
+        
         
         OnModelCreatingPartial(modelBuilder);
         

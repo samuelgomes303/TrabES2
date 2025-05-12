@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace TrabalhoES2.Models;
 
@@ -15,6 +16,7 @@ public partial class Depositoprazo
 
     public string Titular { get; set; } = null!;
 
+    [Range(0.01, 50.00, ErrorMessage = "A taxa de juro anual deve estar entre 0.01% e 50%.")]
     public decimal Taxajuroanual { get; set; }
 
     public decimal Valoratual { get; set; }

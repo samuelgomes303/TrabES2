@@ -22,4 +22,11 @@ public partial class Fundoinvestimento
     public virtual Ativofinanceiro Ativofinanceiro { get; set; } = null!;
 
     public virtual Banco Banco { get; set; } = null!;
+    
+    public decimal Quantidade { get; set; }
+    
+    public List<FundoCompra> FundoCompras { get; set; } = new();
+
+
+
 }
