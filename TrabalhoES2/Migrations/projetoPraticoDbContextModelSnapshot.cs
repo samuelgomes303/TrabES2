@@ -408,9 +408,17 @@ namespace TrabalhoES2.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("BlockedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("blocked_at");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -418,6 +426,18 @@ namespace TrabalhoES2.Migrations
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
+
+                    b.Property<bool>("IsBlocked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_blocked");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_deleted");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
@@ -456,6 +476,10 @@ namespace TrabalhoES2.Migrations
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("UnblockedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("unblocked_at");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)

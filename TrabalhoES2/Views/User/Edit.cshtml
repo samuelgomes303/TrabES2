@@ -19,6 +19,38 @@
         <form asp-action="Edit" method="post">
             <div asp-validation-summary="All" class="text-danger"></div>
             <input type="hidden" name="Id" value="@Model.Id" />
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5>Estado do Utilizador</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.IsBlocked)
+                    {
+                        <div class="alert alert-warning">
+                            <strong>Utilizador Bloqueado</strong>
+                            <p>Este utilizador está bloqueado desde @Model.BlockedAt?.ToString("yyyy-MM-dd HH:mm")</p>
+                            <a asp-action="Unblock" asp-route-id="@Model.Id" class="btn btn-sm btn-success">Desbloquear Utilizador</a>
+                        </div>
+                    }
+                    else if (Model.UnblockedAt.HasValue)
+                    {
+                        <div class="alert alert-success">
+                            <strong>Utilizador Ativo</strong>
+                            <p>Este utilizador foi desbloqueado em @Model.UnblockedAt?.ToString("yyyy-MM-dd HH:mm")</p>
+                            <a asp-action="Block" asp-route-id="@Model.Id" class="btn btn-sm btn-warning">Bloquear Utilizador</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-success">
+                            <strong>Utilizador Ativo</strong>
+                            <a asp-action="Block" asp-route-id="@Model.Id" class="btn btn-sm btn-warning">Bloquear Utilizador</a>
+                        </div>
+                    }
+                </div>
+            </div>
+
             <div class="form-group mb-3">
                 <label for="Nome" class="control-label">Nome</label>
                 <input id="Nome" name="Nome" class="form-control" value="@Model.Nome" required />
@@ -70,7 +102,7 @@
             // Desativar validação de formulário para os campos de senha
             $('form').removeData('validator').removeData('unobtrusiveValidation');
             $.validator.unobtrusive.parse('form');
-            
+
             // Validação em tempo real para confirmação de password
             $('#ConfirmNewPassword, #NewPassword').on('keyup', function() {
                 if ($('#NewPassword').val()) {

@@ -21,11 +21,16 @@ namespace TrabalhoES2.Areas.Identity.Pages.Account
     public class LoginModel : PageModel
     {
         private readonly SignInManager<Utilizador> _signInManager;
+        private readonly UserManager<Utilizador> _userManager; // Adicione esta linha
         private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(SignInManager<Utilizador> signInManager, ILogger<LoginModel> logger)
+        public LoginModel(
+            SignInManager<Utilizador> signInManager, 
+            UserManager<Utilizador> userManager, // Adicione este parâmetro
+            ILogger<LoginModel> logger)
         {
             _signInManager = signInManager;
+            _userManager = userManager; // Adicione esta atribuição
             _logger = logger;
         }
 
@@ -110,6 +115,23 @@ namespace TrabalhoES2.Areas.Identity.Pages.Account
 
             if (ModelState.IsValid)
             {
+                // Verificar se o usuário existe e está bloqueado ou removido
+                var user = await _userManager.FindByEmailAsync(Input.Email);
+                if (user != null)
+                {
+                    if (user.IsDeleted)
+                    {
+                        ModelState.AddModelError(string.Empty, "Esta conta foi removida. Por favor, contacte o administrador.");
+                        return Page();
+                    }
+
+                    if (user.IsBlocked)
+                    {
+                        ModelState.AddModelError(string.Empty, "Esta conta está bloqueada. Por favor, contacte o administrador.");
+                        return Page();
+                    }
+                }
+
                 // This doesn't count login failures towards account lockout
                 // To enable password failures to trigger account lockout, set lockoutOnFailure: true
                 var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
@@ -125,7 +147,14 @@ namespace TrabalhoES2.Areas.Identity.Pages.Account
                 if (result.IsLockedOut)
                 {
                     _logger.LogWarning("User account locked out.");
-                    return RedirectToPage("./Lockout");
+                    ModelState.AddModelError(string.Empty, "Esta conta está bloqueada. Por favor, contacte o administrador.");
+                    return Page();
+                }
+                if (result.IsNotAllowed)
+                {
+                    _logger.LogWarning("User account deleted or not allowed.");
+                    ModelState.AddModelError(string.Empty, "Esta conta foi removida ou não está ativa. Por favor, contacte o administrador.");
+                    return Page();
                 }
                 else
                 {
