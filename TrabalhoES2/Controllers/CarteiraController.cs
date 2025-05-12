@@ -24,7 +24,7 @@ namespace TrabalhoES2.Controllers
         }
 
 // GET: Carteira
-public async Task<IActionResult> Index(string searchString, string tipo, decimal? montanteAplicado)
+public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? montanteAplicado)
 {
     var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
@@ -53,16 +53,21 @@ public async Task<IActionResult> Index(string searchString, string tipo, decimal
         .Include(a => a.Imovelarrendado).ThenInclude(i => i.Banco)
         .ToListAsync();
 
+    // Carrega também os bancos para a dropdown
+    ViewBag.Bancos = await _context.Bancos
+        .OrderBy(b => b.Nome)
+        .ToListAsync();
+
     // Constrói a query para FILTROS
     var ativosQuery = todosAtivos.AsQueryable();
 
-    // Filtrar por nome do Banco
-    if (!string.IsNullOrEmpty(searchString))
+    // 1) Filtrar por banco selecionado
+    if (bancoId.HasValue)
     {
         ativosQuery = ativosQuery.Where(a =>
-            (a.Depositoprazo != null && a.Depositoprazo.Banco.Nome.Contains(searchString)) ||
-            (a.Fundoinvestimento != null && a.Fundoinvestimento.Banco.Nome.Contains(searchString)) ||
-            (a.Imovelarrendado != null && a.Imovelarrendado.Banco.Nome.Contains(searchString))
+            (a.Depositoprazo != null && a.Depositoprazo.BancoId == bancoId.Value) ||
+            (a.Fundoinvestimento != null && a.Fundoinvestimento.BancoId == bancoId.Value) ||
+            (a.Imovelarrendado != null && a.Imovelarrendado.BancoId == bancoId.Value)
         );
     }
 
@@ -88,9 +93,26 @@ public async Task<IActionResult> Index(string searchString, string tipo, decimal
     {
         ativosQuery = ativosQuery.Where(a =>
             (a.Depositoprazo != null && a.Depositoprazo.Valorinicial >= montanteAplicado.Value) ||
-            (a.Fundoinvestimento != null && a.Fundoinvestimento.Montanteinvestido >= montanteAplicado.Value)
+            (a.Fundoinvestimento != null && a.Fundoinvestimento.Montanteinvestido >= montanteAplicado.Value) ||
+            (a.Imovelarrendado != null && a.Imovelarrendado.Valorimovel >= montanteAplicado.Value)
         );
     }
+
+    // 4) Só ativos ainda vigentes (DataInício + Duração >= hoje)
+    var hoje = DateOnly.FromDateTime(DateTime.Now);
+    ativosQuery = ativosQuery.Where(a =>
+        a.Datainicio.HasValue &&
+        a.Duracaomeses.HasValue &&
+        a.Datainicio.Value.AddMonths(a.Duracaomeses.Value) >= hoje
+    );
+
+    // 5) Ordena descrescentemente pelo valor inicial aplicado
+    ativosQuery = ativosQuery.OrderByDescending(a =>
+        a.Depositoprazo != null       ? (decimal?)a.Depositoprazo.Valorinicial :
+        a.Fundoinvestimento != null   ? (decimal?)a.Fundoinvestimento.Montanteinvestido :
+        a.Imovelarrendado != null     ? (decimal?)a.Imovelarrendado.Valorimovel :
+                                        0m
+    );
 
     // Lista filtrada
     var ativosFiltrados = ativosQuery.ToList();
@@ -107,8 +129,9 @@ public async Task<IActionResult> Index(string searchString, string tipo, decimal
     }
 
     // Passa valores para manter preenchidos na view
-    ViewData["searchString"]    = searchString;
-    ViewData["tipo"]            = tipo;
+    ViewBag.Bancos = await _context.Bancos.OrderBy(b => b.Nome).ToListAsync();
+    ViewData["bancoId"]        = bancoId?.ToString();
+    ViewData["tipo"]           = tipo;
     ViewData["montanteAplicado"] = montanteAplicado?.ToString("F2");
 
     return View(carteira);
