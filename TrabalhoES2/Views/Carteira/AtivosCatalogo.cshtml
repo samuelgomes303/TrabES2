@@ -1,4 +1,5 @@
-﻿@model IEnumerable<TrabalhoES2.Models.Ativofinanceiro>
+﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model IEnumerable<TrabalhoES2.Models.Ativofinanceiro>
 
 @{
     ViewData["Title"] = "Ativos Disponíveis";
@@ -48,15 +49,15 @@ else
                 <div class="card-header">
                     @if (ativo.Depositoprazo != null)
                     {
-                        <h5 class="text-wrap">Depósito a Prazo</h5>
+                        <h5 class="text-wrap">@ativo.Depositoprazo.Titular</h5>
                     }
                     else if (ativo.Fundoinvestimento != null)
                     {
-                        <h5 class="text-wrap">Fundo de Investimento - @ativo.Fundoinvestimento.Nome</h5>
+                        <h5 class="text-wrap">@ativo.Fundoinvestimento.Nome</h5>
                     }
                     else if (ativo.Imovelarrendado != null)
                     {
-                        <h5 class="text-wrap">Imóvel Arrendado - @ativo.Imovelarrendado.Designacao</h5>
+                        <h5 class="text-wrap">@ativo.Imovelarrendado.Designacao</h5>
                     }
                 </div>
 

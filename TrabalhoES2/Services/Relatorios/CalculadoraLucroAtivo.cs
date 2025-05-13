@@ -86,4 +86,55 @@ public class CalculadoraLucroAtivo : ICalculadoraLucroAtivo
             LucroLiquido = 0m
         };
     }
+    
+    public IEnumerable<object> CalcularImpostosMensais(DateTime dataInicio, DateTime dataFim)
+    {
+        var resultados = new List<object>();
+
+        var dataInicioAtivo = _ativo.Datainicio?.ToDateTime(TimeOnly.MinValue) ?? DateTime.MinValue;
+        var duracaoMeses = _ativo.Duracaomeses ?? 0;
+        var dataFimAtivo = duracaoMeses > 0 ? dataInicioAtivo.AddMonths(duracaoMeses) : DateTime.MaxValue;
+
+        var inicio = dataInicio > dataInicioAtivo ? dataInicio : dataInicioAtivo;
+        var fim = dataFim < dataFimAtivo ? dataFim : dataFimAtivo;
+
+        for (var dt = new DateTime(inicio.Year, inicio.Month, 1); dt <= fim; dt = dt.AddMonths(1))
+        {
+            decimal impostoMensal = 0;
+            decimal percImposto = _ativo.Percimposto ?? 0;
+
+            string tipo = "";
+            string designacao = "";
+
+            if (_ativo.Depositoprazo != null)
+            {
+                impostoMensal = _helper.CalcularImpostoMensalDeposito(_ativo.Depositoprazo, percImposto, dt);
+                tipo = "Depósito a Prazo";
+                designacao = _ativo.Depositoprazo.Titular ?? "Depósito";
+            }
+            else if (_ativo.Imovelarrendado != null)
+            {
+                impostoMensal = _helper.CalcularImpostoMensalImovel(_ativo.Imovelarrendado, percImposto, dt);
+                tipo = "Imóvel Arrendado";
+                designacao = _ativo.Imovelarrendado.Designacao ?? "Imóvel";
+            }
+            else if (_ativo.Fundoinvestimento != null)
+            {
+                impostoMensal = _helper.CalcularImpostoMensalFundo(_ativo.Fundoinvestimento, percImposto, dt);
+                tipo = "Fundo de Investimento";
+                designacao = _ativo.Fundoinvestimento.Nome ?? "Fundo";
+            }
+
+            resultados.Add(new
+            {
+                Designacao = designacao,
+                Tipo = tipo,
+                MesAno = dt.ToString("MM/yyyy"),
+                ValorImposto = impostoMensal
+            });
+        }
+
+        return resultados;
+    }
+    
 }

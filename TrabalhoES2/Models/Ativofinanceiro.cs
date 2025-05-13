@@ -22,4 +22,5 @@ public partial class Ativofinanceiro
     public virtual Fundoinvestimento? Fundoinvestimento { get; set; }
 
     public virtual Imovelarrendado? Imovelarrendado { get; set; }
+    
 }

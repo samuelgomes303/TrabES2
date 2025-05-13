@@ -13,6 +13,12 @@
 }
 
 <div class="mb-4">
+    <a asp-action="SelecionarRelatorio" asp-controller="Carteira" asp-route-id="@Model.CarteiraId" class="btn btn-info">
+        Gerar Relatório2
+    </a>
+</div>
+
+<div class="mb-4">
     <a asp-action="AtivosCatalogo" class="btn btn-primary">Ver Ativos Disponíveis</a>
 </div>
 
@@ -118,21 +124,40 @@ else
         <div class="card-body">
             <table class="table table-striped">
                 <thead>
-                    <tr>
-                        <th>Tipo</th>
-                        <th>Duração (meses)</th>
-                        <th>Data de Início</th>
-                        <th>Detalhes</th>
-                        <th>Valor Inicial</th>
-                        <th>Valor Atual</th>
-                        <th>Expectativa de Rendimento</th>
-                        <th>Ações</th>
-                    </tr>
+                <tr>
+                    <th>Designação</th>
+                    <th>Tipo</th>
+                    <th>Duração (meses)</th>
+                    <th>Data de Início</th>
+                    <th>Detalhes</th>
+                    <th>Valor Inicial</th>
+                    <th>Valor Atual</th>
+                    <th>Expectativa de Rendimento</th>
+                    <th>Ações</th>
+                </tr>
                 </thead>
                 <tbody>
                 @foreach (var ativo in Model.Ativofinanceiros)
                 {
                     <tr>
+                        <td>
+                            @if (ativo.Depositoprazo != null)
+                            {
+                            <span>@ativo.Depositoprazo.Titular</span>
+                            }
+                            else if (ativo.Fundoinvestimento != null)
+                            {
+                            <span>@ativo.Fundoinvestimento.Nome</span>
+                            }
+                            else if (ativo.Imovelarrendado != null)
+                            {
+                            <span>@ativo.Imovelarrendado.Designacao</span>
+                            }
+                            else
+                            {
+                            <span>Sem designação</span>
+                            }
+                        </td>
                         <td>
                             @if (ativo.Depositoprazo != null)
                             {

@@ -378,10 +378,6 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
 
             ativo.Duracaomeses = DuracaoMeses;
 
-            // Garantir valores obrigatórios para os campos que não estão no formulário
-            deposito.Nrconta ??= "auto";
-            deposito.Titular ??= "auto";
-
             // Atualizar o valor atual com a fórmula
             var C = deposito.Valorinicial;
             var TANB = deposito.Taxajuroanual / 100m;
@@ -687,5 +683,71 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
 
             return View(carteira);
         }
+        
+        
+        [HttpGet, ActionName("GerarRelatorioImpostos")]
+        public async Task<IActionResult> GerarRelatorioImpostos(int id, DateTime dataInicio, DateTime dataFim)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            var carteira = await _context.Carteiras
+                .Include(c => c.Utilizador)
+                .Include(c => c.Ativofinanceiros)
+                    .ThenInclude(a => a.Depositoprazo)
+                        .ThenInclude(d => d.Banco)
+                .Include(c => c.Ativofinanceiros)
+                    .ThenInclude(a => a.Fundoinvestimento)
+                        .ThenInclude(f => f.Banco)
+                .Include(c => c.Ativofinanceiros)
+                    .ThenInclude(a => a.Imovelarrendado)
+                .FirstOrDefaultAsync(c => c.CarteiraId == id && c.UtilizadorId == userId);
+
+            if (carteira == null)
+            {
+                return NotFound("Carteira não encontrada ou não pertence ao utilizador.");
+            }
+
+            if (dataFim <= dataInicio)
+            {
+                TempData["Erro"] = "A data final deve ser posterior à data inicial.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var impostosMensais = new List<dynamic>();
+
+           
+            foreach (var ativo in carteira.Ativofinanceiros)
+            {
+                var calculadora = AtivoCalculadoraFactory.Criar(ativo);
+
+                if (calculadora.AtivoRelevante(dataInicio, dataFim))
+                {
+                    var impostos = calculadora.CalcularImpostosMensais(dataInicio, dataFim);
+                    impostosMensais.AddRange(impostos);
+                }
+            }
+
+            ViewBag.ImpostosMensais = impostosMensais;
+            ViewBag.DataInicio = dataInicio;
+            ViewBag.DataFim = dataFim;
+
+            return View("RelatorioImpostos", carteira);
+        }
+        
+        
+        public IActionResult SelecionarRelatorio(int id)
+        {
+            var carteira = _context.Carteiras
+                .Include(c => c.Utilizador)
+                .FirstOrDefault(c => c.CarteiraId == id);
+
+            if (carteira == null)
+            {
+                return NotFound();
+            }
+
+            return View("SelecionarRelatorio", carteira);
+        }
+
     }
 }
