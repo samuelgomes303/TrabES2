@@ -196,22 +196,18 @@ public partial class projetoPraticoDbContext : IdentityDbContext<Utilizador, Ide
 
         modelBuilder.Entity<Utilizador>(entity =>
         {
-            entity.HasKey(e => e.Id); // A chave primária é o Id do IdentityUser, que já é gerido pelo Identity
+            entity.HasKey(e => e.Id); // A chave primária é o Id do IdentityUser<int>, que já é gerido pelo Identity
+
             entity.ToTable("utilizador");
+
             entity.HasIndex(e => e.Email).IsUnique(); // Garante que o email seja único
+
             entity.Property(e => e.Nome).HasColumnName("nome");
             entity.Property(e => e.TpUtilizador)
                 .HasConversion(
                     v => v.ToString(),
                     v => (Utilizador.TipoUtilizador)Enum.Parse(typeof(Utilizador.TipoUtilizador), v));
-    
-            // Configure new fields
-            entity.Property(e => e.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);
-            entity.Property(e => e.IsBlocked).HasColumnName("is_blocked").HasDefaultValue(false);
-            entity.Property(e => e.DeletedAt).HasColumnName("deleted_at").IsRequired(false);
-            entity.Property(e => e.BlockedAt).HasColumnName("blocked_at").IsRequired(false);
-            entity.Property(e => e.UnblockedAt).HasColumnName("unblocked_at").IsRequired(false);
-    
+
             // Relacionamento com a tabela Carteira
             entity.HasMany(u => u.Carteiras)
                 .WithOne(c => c.Utilizador)
@@ -234,4 +230,3 @@ public class ApplicationUserIdentityConfiguration : IEntityTypeConfiguration<Uti
 }
 
     
-
