@@ -141,28 +141,53 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
 
 
         // GET: Carteira/AtivosCatalogo
+        [HttpGet]
         public async Task<IActionResult> AtivosCatalogo()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            if (user == null) return NotFound();
+            if (user == null)
+                return NotFound();
 
             ViewBag.TpUtilizador = user.TpUtilizador.ToString();
             ViewBag.UserId = user.Id;
 
-            var ativosCatalogo = await _context.Ativofinanceiros
-                .Include(a => a.Carteira).ThenInclude(c => c.Utilizador)
+            // Ativos da carteira do próprio utilizador
+            var ativosDoUtilizador = await _context.Ativofinanceiros
+                .Include(a => a.Carteira)
                 .Include(a => a.Depositoprazo).ThenInclude(d => d.Banco)
                 .Include(a => a.Fundoinvestimento).ThenInclude(f => f.Banco)
                 .Include(a => a.Imovelarrendado).ThenInclude(i => i.Banco)
-                .Where(a =>
-                    a.Carteira.UtilizadorId == userId || // ativos do próprio utilizador
-                    (a.Fundoinvestimento != null && a.Carteira.Utilizador.TpUtilizador == Utilizador.TipoUtilizador.Admin))
-
+                .Where(a => a.Carteira.UtilizadorId == userId)
                 .ToListAsync();
 
-            return View(ativosCatalogo);
+            ViewBag.AtivosDoUtilizador = ativosDoUtilizador;
+
+            // Fundos de investimento do admin ainda não adicionados
+            var fundosAdmin = await _context.Ativofinanceiros
+                .Include(a => a.Carteira).ThenInclude(c => c.Utilizador)
+                .Include(a => a.Fundoinvestimento).ThenInclude(f => f.Banco)
+                .Where(a => a.Fundoinvestimento != null && a.Carteira.Utilizador.TpUtilizador == Utilizador.TipoUtilizador.Admin)
+                .ToListAsync();
+
+            // Remove fundos que o utilizador já adicionou (com base no nome do fundo)
+            var nomesJaAdicionados = ativosDoUtilizador
+                .Where(a => a.Fundoinvestimento != null)
+                .Select(a => a.Fundoinvestimento.Nome)
+                .ToHashSet();
+
+            var fundosParaAdicionar = fundosAdmin
+                .Where(a => !nomesJaAdicionados.Contains(a.Fundoinvestimento.Nome))
+                .ToList();
+
+            ViewBag.FundosDoAdmin = fundosParaAdicionar;
+
+            // A view espera um IEnumerable completo
+            var todos = ativosDoUtilizador.Concat(fundosParaAdicionar).ToList();
+
+            return View(todos);
         }
+
 
 
         // POST: Carteira/AdicionarAtivo
@@ -221,7 +246,7 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
                     Titular = ativoOriginal.Depositoprazo.Titular,
                     Taxajuroanual = ativoOriginal.Depositoprazo.Taxajuroanual,
                     Valorinicial = ativoOriginal.Depositoprazo.Valorinicial,
-                    Valoratual = ativoOriginal.Depositoprazo.Valoratual
+                    Valoratual = ativoOriginal.Depositoprazo.Valorinicial
                 });
             }
             else if (ativoOriginal.Fundoinvestimento != null)
@@ -447,12 +472,81 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AdicionarQuantidadeFundo(int fundoId, decimal valor)
+        {
+            var fundo = await _context.Fundoinvestimentos
+                .FirstOrDefaultAsync(f => f.FundoinvestimentoId == fundoId);
+
+            if (fundo == null)
+            {
+                return NotFound("Fundo não encontrado.");
+            }
+
+            fundo.Quantidade += valor;
+            fundo.Valoratual += valor;
+
+            await _context.SaveChangesAsync();
+
+            TempData["Mensagem"] = "Quantidade adicionada com sucesso.";
+            return RedirectToAction("AtivosCatalogo");
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AdicionarFundo(int fundoId, decimal valor)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var carteira = await _context.Carteiras.FirstOrDefaultAsync(c => c.UtilizadorId == userId);
+            if (carteira == null) return NotFound();
+
+            var fundoOriginal = await _context.Fundoinvestimentos
+                .Include(f => f.Ativofinanceiro)
+                .FirstOrDefaultAsync(f => f.FundoinvestimentoId == fundoId);
+
+            if (fundoOriginal == null) return NotFound();
+
+            // Criar novo ativo
+            var novoAtivo = new Ativofinanceiro
+            {
+                CarteiraId = carteira.CarteiraId,
+                Datainicio = DateOnly.FromDateTime(DateTime.Now),
+                Duracaomeses = fundoOriginal.Ativofinanceiro.Duracaomeses,
+                Percimposto = fundoOriginal.Ativofinanceiro.Percimposto
+            };
+
+            _context.Ativofinanceiros.Add(novoAtivo);
+            await _context.SaveChangesAsync();
+
+            // Criar novo fundo (cópia para este utilizador)
+            var novoFundo = new Fundoinvestimento
+            {
+                AtivofinanceiroId = novoAtivo.AtivofinanceiroId,
+                BancoId = fundoOriginal.BancoId,
+                Nome = fundoOriginal.Nome,
+                Taxajuropdefeito = fundoOriginal.Taxajuropdefeito,
+                Montanteinvestido = valor,
+                Valoratual = valor,
+                Quantidade = 1
+            };
+
+            _context.Fundoinvestimentos.Add(novoFundo);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("AtivosCatalogo");
+        }
+
+        
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateFundo(Fundoinvestimento fundo, Ativofinanceiro ativo)
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             await _fundoService.CriarFundoAsync(fundo, ativo, userId);
             return RedirectToAction(nameof(AtivosCatalogo));
         }
+        
+        
 
     
         //Editar Fundos
@@ -687,5 +781,26 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
 
             return View(carteira);
         }
+        
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GestaoFundos()
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            var ativos = await _context.Ativofinanceiros
+                .Include(a => a.Depositoprazo).ThenInclude(d => d.Banco)
+                .Include(a => a.Fundoinvestimento).ThenInclude(f => f.Banco)
+                .Include(a => a.Imovelarrendado).ThenInclude(i => i.Banco)
+                .Include(a => a.Carteira).ThenInclude(c => c.Utilizador)
+                .Where(a => a.Carteira.UtilizadorId == userId)
+                .ToListAsync();
+
+            ViewBag.TpUtilizador = "Admin";
+            ViewBag.UserId = userId;
+
+            return View("GestaoFundos", ativos);
+        }
+
+
     }
 }

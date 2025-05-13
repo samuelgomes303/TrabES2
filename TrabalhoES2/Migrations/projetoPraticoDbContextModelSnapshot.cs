@@ -290,6 +290,30 @@ namespace TrabalhoES2.Migrations
                     b.ToTable("depositoprazo", (string)null);
                 });
 
+            modelBuilder.Entity("TrabalhoES2.Models.FundoCompra", b =>
+                {
+                    b.Property<int>("FundoCompraId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FundoCompraId"));
+
+                    b.Property<DateOnly>("DataCompra")
+                        .HasColumnType("date");
+
+                    b.Property<int>("FundoinvestimentoId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("ValorPorUnidade")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("FundoCompraId");
+
+                    b.HasIndex("FundoinvestimentoId");
+
+                    b.ToTable("FundoCompras");
+                });
+
             modelBuilder.Entity("TrabalhoES2.Models.Fundoinvestimento", b =>
                 {
                     b.Property<int>("FundoinvestimentoId")
@@ -316,6 +340,13 @@ namespace TrabalhoES2.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("nome");
+
+                    b.Property<decimal>("Quantidade")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasDefaultValue(1m)
+                        .HasColumnName("quantidade");
 
                     b.Property<decimal>("Taxajuropdefeito")
                         .HasPrecision(5, 2)
@@ -594,6 +625,17 @@ namespace TrabalhoES2.Migrations
                     b.Navigation("Banco");
                 });
 
+            modelBuilder.Entity("TrabalhoES2.Models.FundoCompra", b =>
+                {
+                    b.HasOne("TrabalhoES2.Models.Fundoinvestimento", "Fundoinvestimento")
+                        .WithMany("Compras")
+                        .HasForeignKey("FundoinvestimentoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Fundoinvestimento");
+                });
+
             modelBuilder.Entity("TrabalhoES2.Models.Fundoinvestimento", b =>
                 {
                     b.HasOne("TrabalhoES2.Models.Ativofinanceiro", "Ativofinanceiro")
@@ -655,6 +697,11 @@ namespace TrabalhoES2.Migrations
             modelBuilder.Entity("TrabalhoES2.Models.Carteira", b =>
                 {
                     b.Navigation("Ativofinanceiros");
+                });
+
+            modelBuilder.Entity("TrabalhoES2.Models.Fundoinvestimento", b =>
+                {
+                    b.Navigation("Compras");
                 });
 
             modelBuilder.Entity("TrabalhoES2.Models.Utilizador", b =>
