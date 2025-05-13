@@ -1,0 +1,22 @@
+﻿@model IEnumerable<TrabalhoES2.Models.Ativofinanceiro>
+
+@{
+    ViewData["Title"] = "Gestão de Ativos";
+}
+
+<h1 class="mb-4">Gestão de Ativos do Administrador</h1>
+
+<div class="d-flex gap-3 mb-4">
+    <a asp-action="Create" class="btn btn-success">+ Novo Depósito a Prazo</a>
+    <a asp-action="CreateFundo" class="btn btn-primary">+ Novo Fundo de Investimento</a>
+    <a asp-action="CreateImovel" class="btn btn-info">+ Novo Imóvel Arrendado</a>
+</div>
+
+<div class="row">
+    @foreach (var ativo in Model)
+    {
+        <div class="col-md-4 mb-4">
+            @Html.Partial("_CardAtivo", ativo)
+        </div>
+    }
+</div>
