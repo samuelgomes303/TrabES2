@@ -1,4 +1,5 @@
-﻿@model TrabalhoES2.Models.Depositoprazo
+﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model TrabalhoES2.Models.Depositoprazo
 @{
     ViewData["Title"] = "Criar Depósito a Prazo";
     var bancos = ViewBag.Bancos as List<TrabalhoES2.Models.Banco>;
@@ -7,6 +8,12 @@
 <h2>@ViewData["Title"]</h2>
 
 <form asp-action="CriarDeposito" method="post">
+
+    <div class="form-group mb-3">
+        <label>Designação</label>
+        <input type="text" name="deposito.Titular" class="form-control" required />
+    </div>
+    
     <div class="form-group mb-3">
         <label>Duração (meses)</label>
         <input type="number" name="ativo.Duracaomeses" class="form-control" required />
@@ -43,8 +50,6 @@
 
     <!-- Campos ocultos ou default -->
     <input type="hidden" name="deposito.Nrconta" value="auto" />
-    <input type="hidden" name="deposito.Titular" value="auto" />
     <input type="hidden" name="deposito.Valoratual" value="0" />
-
     <button type="submit" class="btn btn-primary">Criar</button>
 </form>

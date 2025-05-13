@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using TrabalhoES2.Models;
 using TrabalhoES2.Services; // Adicione esta linha
@@ -9,6 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+builder.Services.AddTransient<IEmailSender, FakeEmailSender>();
+
 
 builder.Services.AddDbContext<projetoPraticoDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -16,8 +19,9 @@ builder.Services.AddDbContext<projetoPraticoDbContext>(options =>
 // Configuração do Identity com chave primária int
 builder.Services.AddIdentity<Utilizador, IdentityRole<int>>()
     .AddEntityFrameworkStores<projetoPraticoDbContext>()
-    .AddDefaultTokenProviders()
-    .AddSignInManager<CustomSignInManager>(); // Adicione esta linha
+    .AddDefaultTokenProviders();
+
+    
 
 builder.Services.AddScoped<IUserClaimsPrincipalFactory<Utilizador>, AppUserClaimsPrincipalFactory>();
 

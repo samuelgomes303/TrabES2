@@ -96,4 +96,35 @@ public class RelatorioLucroHelper
             decimal imposto = rendimento * (percImposto / 100);
             return (rendimento, imposto);
         }
+
+        public decimal CalcularImpostoMensalDeposito(Depositoprazo ativoDeposito, decimal percImposto, DateTime dt)
+        {
+            // A diferença entre o valor atual e o valor inicial será o rendimento
+            decimal rendimento = ativoDeposito.Valoratual - ativoDeposito.Valorinicial;
+
+            // O imposto mensal será o rendimento multiplicado pela percentagem de imposto
+            decimal impostoMensal = rendimento * (percImposto / 100);
+
+            // Retorna o imposto mensal calculado
+            return impostoMensal;
+        }
+
+        public decimal CalcularImpostoMensalImovel(Imovelarrendado ativoImovel, decimal percImposto, DateTime dt)
+        {
+            throw new NotImplementedException();
+            
+        }
+
+        public decimal CalcularImpostoMensalFundo(Fundoinvestimento ativoFundo, decimal percImposto, DateTime dt)
+        {
+            // O rendimento do fundo é a diferença entre o valor atual e o valor inicial
+            // FALTA ACABAR
+            decimal rendimento = ativoFundo.Montanteinvestido;
+
+            // O imposto mensal será o rendimento multiplicado pela percentagem de imposto
+            decimal impostoMensal = rendimento * (percImposto / 100);
+
+            // Retorna o imposto mensal calculado
+            return impostoMensal;
+        }
 }
