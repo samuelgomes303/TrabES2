@@ -414,7 +414,11 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
             _context.Update(ativo);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(AtivosCatalogo));
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("GestaoFundos");
+            }
+            return RedirectToAction("AtivosCatalogo");
         }
 
 
@@ -454,7 +458,13 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
                 _context.Ativofinanceiros.Remove(ativo);
 
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(AtivosCatalogo));
+            
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("GestaoFundos");
+            }
+            return RedirectToAction("AtivosCatalogo");
+
         }
 
         //Criar fundo 
@@ -576,7 +586,11 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
             _context.Update(ativo);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(AtivosCatalogo));
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("GestaoFundos");
+            }
+            return RedirectToAction("AtivosCatalogo");
         }
         
         //Eliminar Fundos
@@ -611,7 +625,11 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
                 _context.Ativofinanceiros.Remove(ativo);
 
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(AtivosCatalogo));
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("GestaoFundos");
+            }
+            return RedirectToAction("AtivosCatalogo");
         }
 
         
@@ -676,7 +694,11 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
             _context.Update(ativo);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(AtivosCatalogo));
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("GestaoFundos");
+            }
+            return RedirectToAction("AtivosCatalogo");
         }
 
         [HttpGet]
@@ -708,7 +730,11 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
                 _context.Ativofinanceiros.Remove(ativo);
 
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(AtivosCatalogo));
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("GestaoFundos");
+            }
+            return RedirectToAction("AtivosCatalogo");
         }
 
         
@@ -787,8 +813,8 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
                 .Include(a => a.Depositoprazo).ThenInclude(d => d.Banco)
                 .Include(a => a.Fundoinvestimento).ThenInclude(f => f.Banco)
                 .Include(a => a.Imovelarrendado).ThenInclude(i => i.Banco)
-                .Include(a => a.Carteira).ThenInclude(c => c.Utilizador)
-                .Where(a => a.Carteira.UtilizadorId == userId)
+                //.Include(a => a.Carteira).ThenInclude(c => c.Utilizador)
+                //.Where(a => a.Carteira.UtilizadorId == userId)
                 .ToListAsync();
 
             ViewBag.TpUtilizador = "Admin";
