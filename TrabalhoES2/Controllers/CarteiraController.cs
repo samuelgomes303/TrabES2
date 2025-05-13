@@ -762,17 +762,22 @@ public async Task<IActionResult> Index(string searchString, string tipo, decimal
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GestaoFundos()
         {
-            var fundos = await _context.Ativofinanceiros
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            var ativos = await _context.Ativofinanceiros
+                .Include(a => a.Depositoprazo).ThenInclude(d => d.Banco)
                 .Include(a => a.Fundoinvestimento).ThenInclude(f => f.Banco)
+                .Include(a => a.Imovelarrendado).ThenInclude(i => i.Banco)
                 .Include(a => a.Carteira).ThenInclude(c => c.Utilizador)
-                .Where(a => a.Fundoinvestimento != null && a.Carteira.Utilizador.TpUtilizador == Utilizador.TipoUtilizador.Admin)
+                .Where(a => a.Carteira.UtilizadorId == userId)
                 .ToListAsync();
 
             ViewBag.TpUtilizador = "Admin";
-            ViewBag.UserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-    
-            return View(fundos);
+            ViewBag.UserId = userId;
+
+            return View("GestaoFundos", ativos);
         }
+
 
     }
 }
