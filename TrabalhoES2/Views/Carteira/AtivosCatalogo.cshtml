@@ -27,7 +27,10 @@ else
 }
 
 <div class="mb-4 d-flex gap-2 flex-wrap">
+    @if (!User.IsInRole("Admin"))
+    {
     <a asp-action="Index" class="btn btn-secondary">Voltar para Minha Carteira</a>
+    }
     <a asp-action="Create" class="btn btn-success">+ Novo Depósito a Prazo</a>
     <a asp-action="CreateImovel" class="btn btn-info">+ Novo Imóvel Arrendado</a>
     @if (ViewBag.TpUtilizador == "Admin")
