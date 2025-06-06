@@ -488,14 +488,30 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
                 return NotFound("Fundo não encontrado.");
             }
 
+            if (fundo.Quantidade <= 0)
+            {
+                TempData["Erro"] = "Quantidade inválida para cálculo.";
+                return RedirectToAction("AtivosCatalogo");
+            }
+
+            // Calcula o valor unitário atual
+            decimal valorUnitario = fundo.Valoratual / fundo.Quantidade;
+
+            // Atualiza a quantidade e o valor
             fundo.Quantidade += valor;
-            fundo.Valoratual += valor;
+            fundo.Valoratual += valorUnitario * valor;
 
             await _context.SaveChangesAsync();
 
             TempData["Mensagem"] = "Quantidade adicionada com sucesso.";
+
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("GestaoFundos");
+            }
             return RedirectToAction("AtivosCatalogo");
         }
+
 
 
         [HttpPost]
@@ -813,9 +829,13 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
                 .Include(a => a.Depositoprazo).ThenInclude(d => d.Banco)
                 .Include(a => a.Fundoinvestimento).ThenInclude(f => f.Banco)
                 .Include(a => a.Imovelarrendado).ThenInclude(i => i.Banco)
-                //.Include(a => a.Carteira).ThenInclude(c => c.Utilizador)
-                //.Where(a => a.Carteira.UtilizadorId == userId)
+                .Where(a =>
+                    a.Depositoprazo != null ||
+                    a.Fundoinvestimento != null ||
+                    a.Imovelarrendado != null
+                )
                 .ToListAsync();
+
 
             ViewBag.TpUtilizador = "Admin";
             ViewBag.UserId = userId;
@@ -888,6 +908,23 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
             }
 
             return View("SelecionarRelatorio", carteira);
+        }
+        
+        public decimal CalcularValorAtualComJuros(Fundoinvestimento fundo, Ativofinanceiro ativo)
+        {
+            if (ativo.Datainicio == null || ativo.Duracaomeses == null)
+                return fundo.Valoratual;
+
+            var mesesDecorridos = (DateTime.Now.Year - ativo.Datainicio.Value.Year) * 12
+                + DateTime.Now.Month - ativo.Datainicio.Value.Month;
+
+            if (mesesDecorridos <= 0)
+                return fundo.Valoratual;
+
+            decimal taxaMensal = fundo.Taxajuropdefeito / 100 / 12;
+            decimal novoValor = fundo.Valoratual * (decimal)Math.Pow((double)(1 + taxaMensal), mesesDecorridos);
+
+            return Math.Round(novoValor, 2);
         }
 
     }
