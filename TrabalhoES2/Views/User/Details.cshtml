@@ -22,15 +22,44 @@
         <dd class="col-sm-10">
             @Html.DisplayFor(model => model.Email)
         </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.TpUtilizador)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.TpUtilizador)
-        </dd>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.LockoutEnd)
-        </dd>
+        @if (User.IsInRole("Admin"))
+        {
+            <dt class="col-sm-2">
+                @Html.DisplayNameFor(model => model.TpUtilizador)
+            </dt>
+            <dd class="col-sm-10">
+                @Html.DisplayFor(model => model.TpUtilizador)
+            </dd>
+        }
+        @if (Model.IsBlocked)
+        {
+            <dt class="col-sm-2">
+                Estado Atual
+            </dt>
+            <dd class="col-sm-10">
+                <span class="badge bg-warning text-dark">Bloqueado</span>
+                <small>(@Model.BlockedAt?.ToString("yyyy-MM-dd HH:mm"))</small>
+            </dd>
+        }
+        else if (Model.UnblockedAt.HasValue)
+        {
+            <dt class="col-sm-2">
+                Estado Atual
+            </dt>
+            <dd class="col-sm-10">
+                <span class="badge bg-success">Ativo</span>
+                <small>(Desbloqueado: @Model.UnblockedAt?.ToString("yyyy-MM-dd HH:mm"))</small>
+            </dd>
+        }
+        else
+        {
+            <dt class="col-sm-2">
+                Estado Atual
+            </dt>
+            <dd class="col-sm-10">
+                <span class="badge bg-success">Ativo</span>
+            </dd>
+        }
     </dl>
 </div>
 <div>
