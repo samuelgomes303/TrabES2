@@ -1,5 +1,4 @@
-@using Microsoft.AspNetCore.Mvc.TagHelpers
-@model TrabalhoES2.Models.Imovelarrendado
+@model TrabalhoES2.ViewModels.ImovelViewModel
 @{
     ViewData["Title"] = "Adicionar Imóvel Arrendado";
 }
@@ -8,50 +7,50 @@
 
 <form asp-action="CreateImovel" method="post">
     <div class="form-group">
-        <label asp-for="Designacao">Designação</label>
-        <input asp-for="Designacao" class="form-control" />
+        <label asp-for="Imovel.Designacao">Designação</label>
+        <input asp-for="Imovel.Designacao" class="form-control" />
     </div>
 
     <div class="form-group">
-        <label asp-for="Localizacao">Localização</label>
-        <input asp-for="Localizacao" class="form-control" />
+        <label asp-for="Imovel.Localizacao">Localização</label>
+        <input asp-for="Imovel.Localizacao" class="form-control" />
     </div>
 
     <div class="form-group">
-        <label asp-for="BancoId">Banco</label>
-        <select asp-for="BancoId" class="form-control" asp-items="@(new SelectList(ViewBag.Bancos, "BancoId", "Nome"))">
+        <label asp-for="Imovel.BancoId">Banco</label>
+        <select asp-for="Imovel.BancoId" class="form-control" asp-items="@(new SelectList(ViewBag.Bancos, "BancoId", "Nome"))">
             <option value="">Selecione um banco</option>
         </select>
     </div>
 
     <div class="form-group">
-        <label asp-for="Valorimovel">Valor do Imóvel</label>
-        <input asp-for="Valorimovel" class="form-control" />
+        <label asp-for="Imovel.Valorimovel">Valor do Imóvel</label>
+        <input asp-for="Imovel.Valorimovel" class="form-control" />
     </div>
 
     <div class="form-group">
-        <label asp-for="Valorrenda">Valor da Renda</label>
-        <input asp-for="Valorrenda" class="form-control" />
+        <label asp-for="Imovel.Valorrenda">Valor da Renda</label>
+        <input asp-for="Imovel.Valorrenda" class="form-control" />
     </div>
 
     <div class="form-group">
-        <label asp-for="Valormensalcondo">Condomínio Mensal</label>
-        <input asp-for="Valormensalcondo" class="form-control" />
+        <label asp-for="Imovel.Valormensalcondo">Condomínio Mensal</label>
+        <input asp-for="Imovel.Valormensalcondo" class="form-control" />
     </div>
 
     <div class="form-group">
-        <label asp-for="Valoranualdespesas">Despesas Anuais</label>
-        <input asp-for="Valoranualdespesas" class="form-control" />
+        <label asp-for="Imovel.Valoranualdespesas">Despesas Anuais</label>
+        <input asp-for="Imovel.Valoranualdespesas" class="form-control" />
     </div>
 
     <div class="form-group">
-        <label>Duração (meses)</label>
-        <input type="number" name="ativo.Duracaomeses" class="form-control" />
+        <label asp-for="Ativo.Duracaomeses">Duração (meses)</label>
+        <input asp-for="Ativo.Duracaomeses" class="form-control" />
     </div>
 
     <div class="form-group">
-        <label>Imposto (%)</label>
-        <input type="number" name="ativo.Percimposto" class="form-control" />
+        <label asp-for="Ativo.Percimposto">Imposto (%)</label>
+        <input asp-for="Ativo.Percimposto" class="form-control" type="number" min="0" max="100" step="1" />
     </div>
 
     <button type="submit" class="btn btn-success">Criar</button>

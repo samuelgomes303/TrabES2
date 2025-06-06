@@ -196,7 +196,7 @@ else
                     }
                     else if (ativo.Imovelarrendado != null)
                     {
-                    @ativo.Imovelarrendado.Valorimovel.ToString("C")
+                        @ImovelService.CalcularValorAtualComRendimentos(ativo.Imovelarrendado, ativo).ToString("C")
                     }
                 </td>
                 <td>
@@ -222,10 +222,9 @@ else
                     }
                     else if (ativo.Imovelarrendado != null)
                     {
-                    var receita = ativo.Imovelarrendado.Valorrenda * 12;
-                    var custos = ativo.Imovelarrendado.Valormensalcondo * 12 + ativo.Imovelarrendado.Valoranualdespesas;
-                    expectativa = receita - custos;
-                    periodo = "por ano";
+                        expectativa = ImovelService.CalcularExpectativaRendimentoAnual(ativo.Imovelarrendado, ativo);
+                        periodo = "por ano";
+
                     }
                     }
 

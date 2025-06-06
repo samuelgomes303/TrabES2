@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using TrabalhoES2.Services.Relatorios;
 using TrabalhoES2.Services;
+using TrabalhoES2.ViewModels;
 
 namespace TrabalhoES2.Controllers
 {
@@ -654,24 +655,28 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
         public async Task<IActionResult> CreateImovel()
         {
             ViewBag.Bancos = await _context.Bancos.ToListAsync();
-            return View();
+            return View(new ImovelViewModel());
+            
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateImovel(Imovelarrendado imovel, Ativofinanceiro ativo)
+        public async Task<IActionResult> CreateImovel(ImovelViewModel viewModel)
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var carteira = await _context.Carteiras.FirstOrDefaultAsync(c => c.UtilizadorId == userId);
 
             if (carteira == null) return NotFound();
 
+            var ativo = viewModel.Ativo;
             ativo.CarteiraId = carteira.CarteiraId;
             ativo.Datainicio = DateOnly.FromDateTime(DateTime.Now);
 
             _context.Ativofinanceiros.Add(ativo);
             await _context.SaveChangesAsync();
 
+            var imovel = viewModel.Imovel;
             imovel.AtivofinanceiroId = ativo.AtivofinanceiroId;
 
             _context.Imovelarrendados.Add(imovel);
@@ -679,6 +684,7 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
 
             return RedirectToAction(nameof(AtivosCatalogo));
         }
+
 
         [HttpGet]
         public async Task<IActionResult> EditImovel(int id)
