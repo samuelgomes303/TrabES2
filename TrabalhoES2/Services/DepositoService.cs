@@ -27,16 +27,33 @@ public class DepositoService
 
         deposito.AtivofinanceiroId = ativo.AtivofinanceiroId;
     
-        // Aqui vamos calcular o valor atual corretamente
-        deposito.Valoratual = InvestimentoUtils.CalcularValorAtualComJuros(
+        // ✅ Corrigido: cálculo da expectativa de rendimento (valor atual)
+        int meses = ativo.Duracaomeses ?? 0;
+        deposito.Valoratual = CalcularValorAtualAoDia(
             deposito.Valorinicial,
             deposito.Taxajuroanual,
-            ativo.Datainicio.Value,
-            ativo.Percimposto.Value
+            ativo.Datainicio.Value
         );
+
 
         _context.Depositoprazos.Add(deposito);
         await _context.SaveChangesAsync();
     }
+
+    // ✅ Fórmula correta de rendimento após imposto
+    private decimal CalcularValorAtualAoDia(decimal valorInicial, decimal taxaAnual, DateOnly dataInicio)
+    {
+        var TANB = taxaAnual / 100m;
+        var t = 0.28m;
+
+        var hoje = DateOnly.FromDateTime(DateTime.Today);
+        var diasPassados = (hoje.ToDateTime(TimeOnly.MinValue) - dataInicio.ToDateTime(TimeOnly.MinValue)).Days;
+
+        if (diasPassados < 0) diasPassados = 0;
+
+        var jurosProporcionais = valorInicial * TANB * diasPassados / 365m * (1 - t);
+        return valorInicial + jurosProporcionais;
+    }
+    
 
 }

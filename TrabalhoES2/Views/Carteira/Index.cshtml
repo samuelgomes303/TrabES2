@@ -206,10 +206,12 @@ else
 
                     if (ativo.Depositoprazo != null)
                     {
-                    var taxa = ativo.Depositoprazo.Taxajuroanual / 100m;
-                    var anos = (int)Math.Ceiling((ativo.Duracaomeses ?? 0) / 12.0);
-                    expectativa = ativo.Depositoprazo.Valoratual * (decimal)Math.Pow((double)(1 + taxa), anos) - ativo.Depositoprazo.Valoratual;
-                    periodo = $"em {anos} {(anos == 1 ? "ano" : "anos")}";
+                        var taxa = ativo.Depositoprazo.Taxajuroanual / 100m;
+                        var meses = ativo.Duracaomeses ?? 0;
+                        var imposto = 0.28m;
+                        expectativa = ativo.Depositoprazo.Valorinicial * taxa * meses / 12m * (1 - imposto);
+                        periodo = $"em {meses / 12m:F1} {(meses == 12 ? "ano" : "anos")}";
+
                     }
                     else if (fundo != null)
                     {
