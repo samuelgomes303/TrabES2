@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.ComponentModel.DataAnnotations;
 namespace TrabalhoES2.Models;
 
 public partial class Imovelarrendado
@@ -11,12 +11,16 @@ public partial class Imovelarrendado
 
     public string Localizacao { get; set; } = null!;
 
+    [Display(Name = "Valor do Imóvel")] 
     public decimal Valorimovel { get; set; }
 
+    [Display(Name = "Valor da Renda")]
     public decimal Valorrenda { get; set; }
 
+    [Display(Name = "Valor Mensal de Condomínio")]
     public decimal Valormensalcondo { get; set; }
 
+    [Display(Name = "Valor Anual de Despesas")]
     public decimal Valoranualdespesas { get; set; }
 
     public int BancoId { get; set; }
