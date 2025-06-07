@@ -34,45 +34,47 @@
                     </li>
                     @if (SignInManager.IsSignedIn(User) && User.IsInRole("Cliente"))
                     {
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Carteira" asp-action="Index">Minha Carteira</a>
-                    </li>    
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Carteira" asp-action="Index">Minha Carteira</a>
+                        </li>
                     }
-                    
-                    @if (SignInManager.IsSignedIn(User) && User.IsInRole("Admin"))
+
+                    @if (SignInManager.IsSignedIn(User) && (User.IsInRole("Admin") || User.IsInRole("UserManager")))
                     {
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">Gestão de Utilizadores</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">
+                                @(User.IsInRole("Admin") ? "Gestão de Utilizadores" : "Gestão de Clientes")
+                            </a>
                         </li>
                     }
                     @if (SignInManager.IsSignedIn(User) && User.IsInRole("Admin"))
                     {
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-controller="Carteira" asp-action="GestaoFundos">Gestão de Ativos</a>
-                    </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="Carteira" asp-action="GestaoFundos">Gestão de Ativos</a>
+                        </li>
                     }
                 </ul>
 
                 <ul class="navbar-nav ms-auto">
                     @if (SignInManager.IsSignedIn(User))
                     {
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index">Hello @UserManager.GetUserName(User)!</a>
-                    </li>
-                    <li class="nav-item">
-                        <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home")" method="post" class="form-inline">
-                            <button type="submit" class="nav-link btn btn-link text-dark border-0">Logout</button>
-                        </form>
-                    </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index">Hello @UserManager.GetUserName(User)!</a>
+                        </li>
+                        <li class="nav-item">
+                            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home")" method="post" class="form-inline">
+                                <button type="submit" class="nav-link btn btn-link text-dark border-0">Logout</button>
+                            </form>
+                        </li>
                     }
                     else
                     {
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Register">Register</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login">Login</a>
-                    </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Register">Register</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login">Login</a>
+                        </li>
                     }
                 </ul>
 

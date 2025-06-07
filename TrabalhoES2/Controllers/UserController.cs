@@ -11,7 +11,7 @@ using TrabalhoES2.Models;
 
 namespace TrabalhoES2.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,UserManager")]
     public class UserController : Controller
     {
         private readonly UserManager<Utilizador> _userManager;
@@ -33,6 +33,12 @@ namespace TrabalhoES2.Controllers
             {
                 query = query.Where(u => !u.IsDeleted);
             }
+
+            // UserManager só vê Clientes, Admin vê todos
+            if (User.IsInRole("UserManager") && !User.IsInRole("Admin"))
+            {
+                query = query.Where(u => u.TpUtilizador == Utilizador.TipoUtilizador.Cliente);
+            }
             
             var users = await query.ToListAsync();
             
@@ -52,10 +58,23 @@ namespace TrabalhoES2.Controllers
 
             var user = await _context.Utilizadors
                 .FirstOrDefaultAsync(m => m.Id == id);
+            
             if (user == null)
             {
                 return NotFound();
             }
+
+            // UserManager só pode ver detalhes de Clientes
+            if (User.IsInRole("UserManager") && !User.IsInRole("Admin"))
+            {
+                if (user.TpUtilizador != Utilizador.TipoUtilizador.Cliente)
+                {
+                    return Forbid("Não tem permissão para ver este utilizador.");
+                }
+            }
+
+            ViewBag.IsUserManager = User.IsInRole("UserManager") && !User.IsInRole("Admin");
+            ViewBag.IsAdmin = User.IsInRole("Admin");
 
             return View(user);
         }
@@ -63,11 +82,20 @@ namespace TrabalhoES2.Controllers
         // GET: User/Create
         public IActionResult Create()
         {
-            // Usar ViewBag para passar os dados para a view
-            ViewBag.TipoUtilizadorOptions = new SelectList(
-                Enum.GetValues(typeof(Utilizador.TipoUtilizador))
-                .Cast<Utilizador.TipoUtilizador>(), 
-                "");
+            // UserManager só pode criar Clientes, Admin pode criar qualquer tipo
+            if (User.IsInRole("UserManager") && !User.IsInRole("Admin"))
+            {
+                ViewBag.TipoUtilizadorOptions = new SelectList(
+                    new[] { Utilizador.TipoUtilizador.Cliente }, 
+                    "");
+            }
+            else
+            {
+                ViewBag.TipoUtilizadorOptions = new SelectList(
+                    Enum.GetValues(typeof(Utilizador.TipoUtilizador))
+                    .Cast<Utilizador.TipoUtilizador>(), 
+                    "");
+            }
                 
             return View();
         }
@@ -77,6 +105,12 @@ namespace TrabalhoES2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(string Nome, string Email, string Password, string ConfirmPassword, Utilizador.TipoUtilizador TipoUtilizador)
         {
+            // UserManager só pode criar Clientes
+            if (User.IsInRole("UserManager") && !User.IsInRole("Admin") && TipoUtilizador != Utilizador.TipoUtilizador.Cliente)
+            {
+                ModelState.AddModelError("", "UserManager só pode criar utilizadores do tipo Cliente.");
+            }
+
             if (string.IsNullOrEmpty(Nome) || string.IsNullOrEmpty(Email) || string.IsNullOrEmpty(Password))
             {
                 ModelState.AddModelError("", "Todos os campos são obrigatórios.");
@@ -114,10 +148,19 @@ namespace TrabalhoES2.Controllers
             }
 
             // Se chegamos aqui, algo falhou, recarregar form
-            ViewBag.TipoUtilizadorOptions = new SelectList(
-                Enum.GetValues(typeof(Utilizador.TipoUtilizador))
-                .Cast<Utilizador.TipoUtilizador>(),
-                "");
+            if (User.IsInRole("UserManager") && !User.IsInRole("Admin"))
+            {
+                ViewBag.TipoUtilizadorOptions = new SelectList(
+                    new[] { Utilizador.TipoUtilizador.Cliente }, 
+                    "");
+            }
+            else
+            {
+                ViewBag.TipoUtilizadorOptions = new SelectList(
+                    Enum.GetValues(typeof(Utilizador.TipoUtilizador))
+                    .Cast<Utilizador.TipoUtilizador>(),
+                    "");
+            }
                 
             return View();
         }
@@ -136,11 +179,26 @@ namespace TrabalhoES2.Controllers
                 return NotFound();
             }
 
-            // Usar ViewBag para passar os dados para a view
-            ViewBag.TipoUtilizadorOptions = new SelectList(
-                Enum.GetValues(typeof(Utilizador.TipoUtilizador))
-                .Cast<Utilizador.TipoUtilizador>(), 
-                "");
+            // UserManager só pode editar Clientes
+            if (User.IsInRole("UserManager") && !User.IsInRole("Admin") && user.TpUtilizador != Utilizador.TipoUtilizador.Cliente)
+            {
+                return Forbid("Não tem permissão para editar este utilizador.");
+            }
+
+            // UserManager só vê dropdown com Cliente, Admin vê todos
+            if (User.IsInRole("UserManager") && !User.IsInRole("Admin"))
+            {
+                ViewBag.TipoUtilizadorOptions = new SelectList(
+                    new[] { Utilizador.TipoUtilizador.Cliente }, 
+                    "");
+            }
+            else
+            {
+                ViewBag.TipoUtilizadorOptions = new SelectList(
+                    Enum.GetValues(typeof(Utilizador.TipoUtilizador))
+                    .Cast<Utilizador.TipoUtilizador>(), 
+                    "");
+            }
                 
             return View(user);
         }
@@ -150,7 +208,31 @@ namespace TrabalhoES2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int Id, string Nome, string Email, string? NewPassword, string? ConfirmNewPassword, Utilizador.TipoUtilizador TipoUtilizador)
         {
-            Console.WriteLine($"Edit POST chamado com Id={Id}, Nome={Nome}, TipoUtilizador={TipoUtilizador}");
+            var isUserManager = User.IsInRole("UserManager") && !User.IsInRole("Admin");
+
+            // Verificar se o utilizador pode ser editado
+            var existingUser = await _context.Utilizadors.FindAsync(Id);
+            if (existingUser == null)
+            {
+                return NotFound();
+            }
+
+            // UserManager só pode editar Clientes
+            if (isUserManager && existingUser.TpUtilizador != Utilizador.TipoUtilizador.Cliente)
+            {
+                return Forbid("Não tem permissão para editar este utilizador.");
+            }
+
+            // UserManager não pode alterar o tipo de utilizador
+            if (isUserManager && TipoUtilizador != Utilizador.TipoUtilizador.Cliente)
+            {
+                ModelState.AddModelError("", "UserManager não pode alterar o tipo de utilizador.");
+                ViewBag.TipoUtilizadorOptions = new SelectList(
+                    new[] { Utilizador.TipoUtilizador.Cliente }, 
+                    "");
+                ViewBag.IsUserManager = isUserManager;
+                return View(existingUser);
+            }
 
             // Remover quaisquer erros de validação para os campos de senha
             if (ModelState.ContainsKey("NewPassword"))
@@ -163,41 +245,38 @@ namespace TrabalhoES2.Controllers
             {
                 ModelState.AddModelError("", "As passwords não coincidem.");
                 
-                ViewBag.TipoUtilizadorOptions = new SelectList(
-                    Enum.GetValues(typeof(Utilizador.TipoUtilizador))
-                    .Cast<Utilizador.TipoUtilizador>(), 
-                    "");
-                    
+                if (isUserManager)
+                {
+                    ViewBag.TipoUtilizadorOptions = new SelectList(
+                        new[] { Utilizador.TipoUtilizador.Cliente }, 
+                        "");
+                }
+                else
+                {
+                    ViewBag.TipoUtilizadorOptions = new SelectList(
+                        Enum.GetValues(typeof(Utilizador.TipoUtilizador))
+                        .Cast<Utilizador.TipoUtilizador>(), 
+                        "");
+                }
+
+                ViewBag.IsUserManager = isUserManager;
                 return View(await _context.Utilizadors.FindAsync(Id));
             }
-
-            // Verificar se chegamos aqui com dados válidos
-            ViewBag.DebugMessage = $"Recebido: Id={Id}, Nome={Nome}, Email={Email}, TipoUtilizador={TipoUtilizador}";
 
             if (ModelState.IsValid)
             {
                 try
                 {
-                    // Tentar obter o utilizador pela chave primária
                     var user = await _context.Set<Utilizador>().FindAsync(Id);
                     
                     if (user == null)
                     {
-                        // Se não encontrou pela chave primária, tentar por Id
                         user = await _context.Utilizadors.FirstOrDefaultAsync(u => u.Id == Id);
                         if (user == null)
                         {
-                            ViewBag.DebugMessage += " | ERRO: Utilizador não encontrado!";
-                            return View();
+                            return NotFound("Utilizador não encontrado!");
                         }
                     }
-
-                    ViewBag.DebugMessage += $" | User encontrado: {user.Nome}, {user.Email}, {user.TpUtilizador}";
-
-                    // Salvar valores originais
-                    var nomeOriginal = user.Nome;
-                    var emailOriginal = user.Email;
-                    var tipoUtilizadorOriginal = user.TpUtilizador;
 
                     // Atualizar propriedades
                     user.Nome = Nome;
@@ -207,29 +286,8 @@ namespace TrabalhoES2.Controllers
                     user.NormalizedUserName = Email.ToUpper();
                     user.TpUtilizador = TipoUtilizador;
 
-                    try {
-                        _context.Entry(user).State = EntityState.Modified;
-                        await _context.SaveChangesAsync();
-                        ViewBag.DebugMessage += " | Dados salvos com sucesso!";
-                    }
-                    catch (Exception ex) {
-                        ViewBag.DebugMessage += $" | ERRO ao salvar: {ex.Message}";
-                        if (ex.InnerException != null) {
-                            ViewBag.DebugMessage += $" | Inner: {ex.InnerException.Message}";
-                        }
-                        
-                        // Restaurar valores originais para o formulário
-                        user.Nome = nomeOriginal;
-                        user.Email = emailOriginal;
-                        user.TpUtilizador = tipoUtilizadorOriginal;
-                        
-                        ViewBag.TipoUtilizadorOptions = new SelectList(
-                            Enum.GetValues(typeof(Utilizador.TipoUtilizador))
-                            .Cast<Utilizador.TipoUtilizador>(), 
-                            "");
-                        
-                        return View(user);
-                    }
+                    _context.Entry(user).State = EntityState.Modified;
+                    await _context.SaveChangesAsync();
 
                     // Atualizar senha se uma nova foi fornecida
                     if (!string.IsNullOrEmpty(NewPassword))
@@ -247,46 +305,59 @@ namespace TrabalhoES2.Controllers
                                     ModelState.AddModelError(string.Empty, error.Description);
                                 }
                                 
-                                ViewBag.TipoUtilizadorOptions = new SelectList(
-                                    Enum.GetValues(typeof(Utilizador.TipoUtilizador))
-                                    .Cast<Utilizador.TipoUtilizador>(), 
-                                    "");
-                                    
+                                if (isUserManager)
+                                {
+                                    ViewBag.TipoUtilizadorOptions = new SelectList(
+                                        new[] { Utilizador.TipoUtilizador.Cliente }, 
+                                        "");
+                                }
+                                else
+                                {
+                                    ViewBag.TipoUtilizadorOptions = new SelectList(
+                                        Enum.GetValues(typeof(Utilizador.TipoUtilizador))
+                                        .Cast<Utilizador.TipoUtilizador>(), 
+                                        "");
+                                }
+
+                                ViewBag.IsUserManager = isUserManager;
                                 return View(user);
                             }
                         }
                     }
 
-                    // Se chegou aqui, a atualização básica foi bem sucedida
                     TempData["SuccessMessage"] = "Utilizador atualizado com sucesso!";
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
-                    ViewBag.DebugMessage += $" | Exceção geral: {ex.Message}";
                     ModelState.AddModelError("", $"Erro ao atualizar o utilizador: {ex.Message}");
-                }
-            }
-            else
-            {
-                ViewBag.DebugMessage += " | ModelState inválido: ";
-                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
-                {
-                    ViewBag.DebugMessage += error.ErrorMessage + "; ";
                 }
             }
 
             // Se chegamos aqui, algo falhou
-            ViewBag.TipoUtilizadorOptions = new SelectList(
-                Enum.GetValues(typeof(Utilizador.TipoUtilizador))
-                .Cast<Utilizador.TipoUtilizador>(), 
-                "");
+            if (isUserManager)
+            {
+                ViewBag.TipoUtilizadorOptions = new SelectList(
+                    new[] { Utilizador.TipoUtilizador.Cliente }, 
+                    "");
+            }
+            else
+            {
+                ViewBag.TipoUtilizadorOptions = new SelectList(
+                    Enum.GetValues(typeof(Utilizador.TipoUtilizador))
+                    .Cast<Utilizador.TipoUtilizador>(), 
+                    "");
+            }
+
+            ViewBag.IsUserManager = isUserManager;
+            ViewBag.IsAdmin = User.IsInRole("Admin");
                 
             var userToReturn = await _context.Utilizadors.FindAsync(Id);
             return View(userToReturn ?? new Utilizador { Id = Id });
         }
 
-        // GET: User/Delete/5
+        // GET: User/Delete/5 - UserManager NÃO TEM ACESSO
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -304,9 +375,10 @@ namespace TrabalhoES2.Controllers
             return View(user);
         }
 
-        // POST: User/Delete/5
+        // POST: User/Delete/5 - UserManager NÃO TEM ACESSO
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var user = await _context.Utilizadors.FindAsync(id);
@@ -324,7 +396,7 @@ namespace TrabalhoES2.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: User/Block/5
+        // GET: User/Block/5 - UserManager TEM ACESSO para Clientes
         public async Task<IActionResult> Block(int? id)
         {
             if (id == null)
@@ -339,29 +411,50 @@ namespace TrabalhoES2.Controllers
                 return NotFound();
             }
 
+            var isUserManager = User.IsInRole("UserManager") && !User.IsInRole("Admin");
+
+            // UserManager só pode bloquear Clientes
+            if (isUserManager && user.TpUtilizador != Utilizador.TipoUtilizador.Cliente)
+            {
+                return Forbid("Não tem permissão para bloquear este utilizador.");
+            }
+
+            ViewBag.IsUserManager = isUserManager;
+            ViewBag.IsAdmin = User.IsInRole("Admin");
+
             return View(user);
         }
 
-        // POST: User/Block/5
+        // POST: User/Block/5 - UserManager TEM ACESSO para Clientes
         [HttpPost, ActionName("Block")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> BlockConfirmed(int id)
         {
             var user = await _context.Utilizadors.FindAsync(id);
-            if (user != null)
+            if (user == null)
             {
-                user.IsBlocked = true;
-                user.BlockedAt = DateTime.UtcNow;
-                
-                _context.Update(user);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Utilizador bloqueado com sucesso!";
+                return NotFound();
             }
+
+            var isUserManager = User.IsInRole("UserManager") && !User.IsInRole("Admin");
+
+            // UserManager só pode bloquear Clientes
+            if (isUserManager && user.TpUtilizador != Utilizador.TipoUtilizador.Cliente)
+            {
+                return Forbid("Não tem permissão para bloquear este utilizador.");
+            }
+
+            user.IsBlocked = true;
+            user.BlockedAt = DateTime.UtcNow;
+            
+            _context.Update(user);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Utilizador bloqueado com sucesso!";
             
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: User/Unblock/5
+        // GET: User/Unblock/5 - UserManager TEM ACESSO para Clientes
         public async Task<IActionResult> Unblock(int? id)
         {
             if (id == null)
@@ -376,24 +469,45 @@ namespace TrabalhoES2.Controllers
                 return NotFound();
             }
 
+            var isUserManager = User.IsInRole("UserManager") && !User.IsInRole("Admin");
+
+            // UserManager só pode desbloquear Clientes
+            if (isUserManager && user.TpUtilizador != Utilizador.TipoUtilizador.Cliente)
+            {
+                return Forbid("Não tem permissão para desbloquear este utilizador.");
+            }
+
+            ViewBag.IsUserManager = isUserManager;
+            ViewBag.IsAdmin = User.IsInRole("Admin");
+
             return View(user);
         }
 
-        // POST: User/Unblock/5
+        // POST: User/Unblock/5 - UserManager TEM ACESSO para Clientes
         [HttpPost, ActionName("Unblock")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UnblockConfirmed(int id)
         {
             var user = await _context.Utilizadors.FindAsync(id);
-            if (user != null)
+            if (user == null)
             {
-                user.IsBlocked = false;
-                user.UnblockedAt = DateTime.UtcNow;
-                
-                _context.Update(user);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Utilizador desbloqueado com sucesso!";
+                return NotFound();
             }
+
+            var isUserManager = User.IsInRole("UserManager") && !User.IsInRole("Admin");
+
+            // UserManager só pode desbloquear Clientes
+            if (isUserManager && user.TpUtilizador != Utilizador.TipoUtilizador.Cliente)
+            {
+                return Forbid("Não tem permissão para desbloquear este utilizador.");
+            }
+
+            user.IsBlocked = false;
+            user.UnblockedAt = DateTime.UtcNow;
+            
+            _context.Update(user);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Utilizador desbloqueado com sucesso!";
             
             return RedirectToAction(nameof(Index));
         }
