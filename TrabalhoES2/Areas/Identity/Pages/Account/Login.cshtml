@@ -1,42 +1,112 @@
 ﻿@page
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @model LoginModel
+
 @{
     ViewData["Title"] = "Log in";
 }
 
-<div class="d-flex justify-content-center align-items-center" style="min-height: 90vh;">
-    <div class="card shadow p-4" style="width: 100%; max-width: 400px;">
-        <h2 class="text-center mb-4">Log in</h2>
-        <form method="post" id="account">
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+@* — estilos isolados para a página de login *@
+<style>
+  .login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 90vh;
+    background: white;
+  }
+  .login-card {
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,.1);
+    max-width: 400px;
+    width: 100%;
+    overflow: hidden;
+    animation: fadeInUp 0.8s ease-out;
+  }
+  .login-card .card-header {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: #fff;
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+  .login-card .card-body {
+    padding: 2rem;
+  }
+  .form-floating > .form-control {
+    border-radius: .5rem;
+  }
+  .form-check-input {
+    transform: scale(1.2);
+    margin-top: .25rem;
+  }
+  .btn-login {
+    border-radius: .5rem;
+    padding: .75rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .login-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: .875rem;
+  }
+  .login-footer a {
+    color: #0056b3;
+    text-decoration: none;
+  }
+  .login-footer a:hover {
+    text-decoration: underline;
+  }
+  keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Email" class="form-control" placeholder="Email" />
-                <label asp-for="Input.Email">Email</label>
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
-            </div>
-
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Password" class="form-control" placeholder="Password" />
-                <label asp-for="Input.Password">Password</label>
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
-            </div>
-
-            <div class="form-check mb-3">
-                <input class="form-check-input" asp-for="Input.RememberMe" />
-                <label class="form-check-label" asp-for="Input.RememberMe">@Html.DisplayNameFor(m => m.Input.RememberMe)</label>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100">Log in</button>
-
-            <div class="text-center mt-3 small">
-                <p><a asp-page="./ForgotPassword">Forgot your password?</a></p>
-                <p><a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Don't have an account? Register</a></p>
-                <p><a asp-page="./ResendEmailConfirmation">Resend email confirmation</a></p>
-            </div>
-        </form>
+<div class="login-page">
+  <div class="card login-card">
+    <div class="card-header">
+      Log in
     </div>
+    <div class="card-body">
+      <form method="post" id="account">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+        <div class="form-floating mb-3">
+          <input asp-for="Input.Email" class="form-control" placeholder="Email" />
+          <label asp-for="Input.Email">Email</label>
+          <span asp-validation-for="Input.Email" class="text-danger"></span>
+        </div>
+
+        <div class="form-floating mb-3">
+          <input asp-for="Input.Password" type="password" class="form-control" placeholder="Password" />
+          <label asp-for="Input.Password">Password</label>
+          <span asp-validation-for="Input.Password" class="text-danger"></span>
+        </div>
+
+        <div class="form-check mb-4">
+          <input class="form-check-input" asp-for="Input.RememberMe" />
+          <label class="form-check-label" asp-for="Input.RememberMe">
+            @Html.DisplayNameFor(m => m.Input.RememberMe)
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 btn-login">
+          Log in
+        </button>
+
+        <div class="login-footer">
+          <p><a asp-page="./ForgotPassword">Forgot your password?</a></p>
+          <p><a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">
+            Don't have an account? Register</a></p>
+          <p><a asp-page="./ResendEmailConfirmation">Resend email confirmation</a></p>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 @section Scripts {

@@ -5,98 +5,139 @@
     ViewData["Title"] = "Criar Utilizador";
 }
 
-<h1>Criar Novo Utilizador</h1>
+@* — estilos isolados para a view de criar utilizador *@
+<style>
+  .form-card {
+    max-width: 600px;
+    margin: 2rem auto;
+    border-radius: 1rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,.05);
+    overflow: hidden;
+  }
+  .form-card .card-header {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .form-floating > .form-control,
+  .form-floating > .form-select {
+    border-radius: .5rem;
+  }
+  .btn-group {
+    display: flex;
+    gap: .5rem;
+    margin-top: 1.5rem;
+  }
+  .btn-primary, .btn-secondary {
+    flex: 1;
+  }
+  .validation-message {
+    font-size: .9rem;
+    color: #dc3545;
+  }
+</style>
 
-<hr />
-<div class="row">
-    <div class="col-md-6">
-        <form asp-action="Create" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group mb-3">
-                <label for="Nome" class="control-label">Nome</label>
-                <input id="Nome" name="Nome" class="form-control" />
-                <span class="text-danger" id="Nome-error"></span>
-            </div>
-            <div class="form-group mb-3">
-                <label for="Email" class="control-label">Email</label>
-                <input id="Email" name="Email" class="form-control" type="email" />
-                <span class="text-danger" id="Email-error"></span>
-            </div>
-            <div class="form-group mb-3">
-                <label for="Password" class="control-label">Password</label>
-                <input id="Password" name="Password" class="form-control" type="password" />
-                <span class="text-danger" id="Password-error"></span>
-            </div>
-            <div class="form-group mb-3">
-                <label for="ConfirmPassword" class="control-label">Confirmar Password</label>
-                <input id="ConfirmPassword" name="ConfirmPassword" class="form-control" type="password" />
-                <span class="text-danger" id="ConfirmPassword-error"></span>
-            </div>
-            <div class="form-group mb-3">
-                <label for="TipoUtilizador" class="control-label">Tipo de Utilizador</label>
-                <select id="TipoUtilizador" name="TipoUtilizador" class="form-control" asp-items="ViewBag.TipoUtilizadorOptions">
-                </select>
-                <span class="text-danger" id="TipoUtilizador-error"></span>
-            </div>
-            <div class="form-group mb-3">
-                <input type="submit" value="Criar" class="btn btn-primary" />
-                <a asp-action="Index" class="btn btn-secondary">Voltar à Lista</a>
-            </div>
-        </form>
-    </div>
+<div class="card form-card">
+  <div class="card-header">
+    <i class="fas fa-user-plus"></i> Criar Novo Utilizador
+  </div>
+  <div class="card-body">
+    <form asp-action="Create" method="post" novalidate>
+      <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+      <div class="form-floating mb-3">
+        <input id="Nome" name="Nome" class="form-control" placeholder="Nome" />
+        <label for="Nome">Nome</label>
+        <span class="validation-message" id="Nome-error"></span>
+      </div>
+
+      <div class="form-floating mb-3">
+        <input id="Email" name="Email" type="email" class="form-control" placeholder="Email" />
+        <label for="Email">Email</label>
+        <span class="validation-message" id="Email-error"></span>
+      </div>
+
+      <div class="form-floating mb-3">
+        <input id="Password" name="Password" type="password" class="form-control" placeholder="Password" />
+        <label for="Password">Password</label>
+        <span class="validation-message" id="Password-error"></span>
+      </div>
+
+      <div class="form-floating mb-3">
+        <input id="ConfirmPassword" name="ConfirmPassword" type="password" class="form-control" placeholder="Confirmar Password" />
+        <label for="ConfirmPassword">Confirmar Password</label>
+        <span class="validation-message" id="ConfirmPassword-error"></span>
+      </div>
+
+      <div class="form-floating mb-3">
+        <select id="TipoUtilizador" name="TipoUtilizador" class="form-select" asp-items="ViewBag.TipoUtilizadorOptions" placeholder="Tipo de Utilizador">
+          <option value="">Selecione um tipo</option>
+        </select>
+        <label for="TipoUtilizador">Tipo de Utilizador</label>
+        <span class="validation-message" id="TipoUtilizador-error"></span>
+      </div>
+
+      <div class="btn-group">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-check me-1"></i> Criar
+        </button>
+        <a asp-action="Index" class="btn btn-secondary">
+          <i class="fas fa-arrow-left me-1"></i> Voltar à Lista
+        </a>
+      </div>
+    </form>
+  </div>
 </div>
 
 @section Scripts {
-    <script>
-        $(document).ready(function() {
-            // Validação do formulário
-            $('form').on('submit', function(e) {
-                // Validações
-                var isValid = true;
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.querySelector('form');
+      form.addEventListener('submit', function(e) {
+        let valid = true;
 
-                // Validar nome
-                if ($('#Nome').val() === '') {
-                    $('#Nome-error').text('O campo Nome é obrigatório');
-                    isValid = false;
-                } else {
-                    $('#Nome-error').text('');
-                }
+        // Nome
+        const nome = document.getElementById('Nome');
+        if (!nome.value.trim()) {
+          document.getElementById('Nome-error').textContent = 'O campo Nome é obrigatório';
+          valid = false;
+        } else {
+          document.getElementById('Nome-error').textContent = '';
+        }
 
-                // Validar email
-                if ($('#Email').val() === '') {
-                    $('#Email-error').text('O campo Email é obrigatório');
-                    isValid = false;
-                } else {
-                    $('#Email-error').text('');
-                }
+        // Email
+        const email = document.getElementById('Email');
+        if (!email.value.trim()) {
+          document.getElementById('Email-error').textContent = 'O campo Email é obrigatório';
+          valid = false;
+        } else {
+          document.getElementById('Email-error').textContent = '';
+        }
 
-                // Validar password
-                if ($('#Password').val() === '') {
-                    $('#Password-error').text('O campo Password é obrigatório');
-                    isValid = false;
-                } else {
-                    $('#Password-error').text('');
-                }
+        // Password
+        const pwd = document.getElementById('Password');
+        if (!pwd.value) {
+          document.getElementById('Password-error').textContent = 'O campo Password é obrigatório';
+          valid = false;
+        } else {
+          document.getElementById('Password-error').textContent = '';
+        }
 
-                // Validar confirmação de password
-                if ($('#Password').val() !== $('#ConfirmPassword').val()) {
-                    $('#ConfirmPassword-error').text('As passwords não coincidem');
-                    isValid = false;
-                } else {
-                    $('#ConfirmPassword-error').text('');
-                }
+        // Confirmar Password
+        const cpwd = document.getElementById('ConfirmPassword');
+        if (pwd.value !== cpwd.value) {
+          document.getElementById('ConfirmPassword-error').textContent = 'As passwords não coincidem';
+          valid = false;
+        } else {
+          document.getElementById('ConfirmPassword-error').textContent = '';
+        }
 
-                return isValid;
-            });
-
-            // Validação em tempo real para confirmação de password
-            $('#ConfirmPassword, #Password').on('keyup', function() {
-                if ($('#Password').val() !== $('#ConfirmPassword').val()) {
-                    $('#ConfirmPassword-error').text('As passwords não coincidem');
-                } else {
-                    $('#ConfirmPassword-error').text('');
-                }
-            });
-        });
-    </script>
+        if (!valid) e.preventDefault();
+      });
+    });
+  </script>
 }

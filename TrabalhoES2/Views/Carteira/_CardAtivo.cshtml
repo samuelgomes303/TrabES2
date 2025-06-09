@@ -2,108 +2,194 @@
 @model TrabalhoES2.Models.Ativofinanceiro
 
 @{
-var tp = ViewBag.TpUtilizador as string;
-var userId = ViewBag.UserId as int?;
-var fundo = Model.Fundoinvestimento;
-var valorAtualComJuros = fundo != null ? FundoInvestimentoService.CalcularValorAtualComJuros(fundo, Model) : 0m;
+    var tp = ViewBag.TpUtilizador as string;
+    var userId = ViewBag.UserId as int?;
+    var fundo = Model.Fundoinvestimento;
+    var valorAtualComJuros = fundo != null
+        ? FundoInvestimentoService.CalcularValorAtualComJuros(fundo, Model)
+        : 0m;
+    // gerar um id único para o collapse
+    var uniqueId = Model.Depositoprazo != null
+        ? "dep-" + Model.Depositoprazo.DepositoprazoId
+        : fundo != null
+            ? "fdo-" + fundo.FundoinvestimentoId
+            : Model.Imovelarrendado != null
+                ? "imv-" + Model.Imovelarrendado.ImovelarrendadoId
+                : "ato-" + Guid.NewGuid().ToString("N");
 }
 
-<div class="card h-100 d-flex flex-column">
-    <div class="card-header">
+@* — estilos e scripts locais para tornar o cartão dinâmico e apelativo *@
+<style>
+  .card-ativo {
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .card-ativo:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,.15);
+  }
+  .card-ativo .card-header {
+    background: linear-gradient(135deg, #0052D4, #4364F7);
+    color: #fff;
+    position: relative;
+    padding: 0;
+  }
+  .collapse-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 1rem;
+    background: none;
+    border: none;
+    color: inherit;
+    text-align: left;
+    font-size: 1.1rem;
+  }
+  .chevron {
+    transition: transform .2s;
+  }
+  /* rodar chevron quando fechado */
+  #details-@uniqueId:not(.show) + .card-footer .chevron,
+  #details-@uniqueId:not(.show) .chevron {
+    transform: rotate(-90deg);
+  }
+  .badge-tipo {
+    position: absolute;
+    top: .75rem;
+    right: .75rem;
+    background: rgba(255,255,255,0.85);
+    color: #333;
+    font-weight: 600;
+  }
+</style>
+
+<div class="card card-ativo h-100 d-flex flex-column" data-tipo="@( 
+        Model.Depositoprazo!=null ? "depósito" :
+        fundo!=null             ? "fundo" :
+        Model.Imovelarrendado!=null ? "imóvel" : "")">
+    
+  <div class="card-header">
+    <button class="collapse-toggle" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#details-@uniqueId" 
+            aria-expanded="true" 
+            aria-controls="details-@uniqueId">
+      @if (Model.Depositoprazo != null)
+      {
+        <span>Depósito a Prazo – @Model.Depositoprazo.Titular</span>
+      }
+      else if (fundo != null)
+      {
+        <span>Fundo de Investimento – @fundo.Nome</span>
+      }
+      else if (Model.Imovelarrendado != null)
+      {
+        <span>Imóvel Arrendado – @Model.Imovelarrendado.Designacao</span>
+      }
+      <i class="fas fa-chevron-down chevron"></i>
+    </button>
+    <span class="badge badge-tipo text-uppercase">
+      @(Model.Depositoprazo!=null ? "Depósito" :
+        fundo!=null             ? "Fundo" :
+        Model.Imovelarrendado!=null ? "Imóvel" : "Ativo")
+    </span>
+  </div>
+
+  <div id="details-@uniqueId" class="collapse show">
+    <div class="card-body d-flex flex-column">
+      <ul class="list-group list-group-flush mb-3">
+        <li class="list-group-item"><strong>Duração:</strong> @Model.Duracaomeses meses</li>
+
+        @* depósito a prazo *@
         @if (Model.Depositoprazo != null)
         {
-        <h5 class="text-wrap">Depósito a Prazo - @Model.Depositoprazo.Titular</h5>
+          <li class="list-group-item"><strong>Taxa Juro:</strong> @Model.Depositoprazo.Taxajuroanual%</li>
+          <li class="list-group-item"><strong>Valor Inicial:</strong> @Model.Depositoprazo.Valorinicial.ToString("C")</li>
+          <li class="list-group-item"><strong>Valor Atual:</strong> @Model.Depositoprazo.Valoratual.ToString("C")</li>
+          <li class="list-group-item"><strong>Banco:</strong> @Model.Depositoprazo.Banco?.Nome</li>
         }
+        @* fundo de investimento *@
         else if (fundo != null)
         {
-        <h5 class="text-wrap">Fundo de Investimento - @fundo.Nome</h5>
+          <li class="list-group-item"><strong>Banco:</strong> @fundo.Banco?.Nome</li>
+          <li class="list-group-item"><strong>Valor Investido:</strong> @fundo.Montanteinvestido.ToString("C")</li>
+          <li class="list-group-item"><strong>Valor Atual:</strong> @valorAtualComJuros.ToString("C")</li>
+          <li class="list-group-item"><strong>Taxa Juro:</strong> @fundo.Taxajuropdefeito%</li>
+          <li class="list-group-item"><strong>Quantidade:</strong> @fundo.Quantidade</li>
+        }
+        @* imóvel arrendado *@
+        else if (Model.Imovelarrendado != null)
+        {
+          <li class="list-group-item"><strong>Localização:</strong> @Model.Imovelarrendado.Localizacao</li>
+          <li class="list-group-item"><strong>Valor do Imóvel:</strong> @Model.Imovelarrendado.Valorimovel.ToString("C")</li>
+          <li class="list-group-item"><strong>Valor da Renda:</strong> @Model.Imovelarrendado.Valorrenda.ToString("C")</li>
+          <li class="list-group-item"><strong>Condomínio:</strong> @Model.Imovelarrendado.Valormensalcondo.ToString("C")</li>
+          <li class="list-group-item"><strong>Despesas:</strong> @Model.Imovelarrendado.Valoranualdespesas.ToString("C")</li>
+        }
+
+        <li class="list-group-item"><strong>Imposto:</strong> @Model.Percimposto%</li>
+      </ul>
+
+      <div class="mt-auto">
+        @* botões dinâmicos conforme tipo e perfil *@
+        @if (fundo != null && (tp == "Cliente" || tp == "UserManager"))
+        {
+          @if (Model.Carteira?.UtilizadorId == userId)
+          {
+            <form asp-action="AdicionarQuantidadeFundo" method="post" class="mb-2">
+              <input type="hidden" name="fundoId" value="@fundo.FundoinvestimentoId" />
+              <div class="mb-2">
+                <label><strong>Adicionar quantidade:</strong></label>
+                <div class="d-flex gap-2 flex-wrap mb-2">
+                  <input type="number" name="valor" class="form-control form-control-sm w-50" placeholder="Quantidade..." min="0.01" step="0.01" required />
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary w-100">Adicionar</button>
+            </form>
+          }
+          else
+          {
+            <form asp-action="AdicionarFundo" method="post" class="mt-2">
+              <input type="hidden" name="fundoId" value="@fundo.FundoinvestimentoId" />
+              <input type="hidden" name="valor" value="@fundo.Montanteinvestido" />
+              <button type="submit" class="btn btn-success w-100">Adicionar à Carteira</button>
+            </form>
+          }
+        }
+
+        @if (Model.Depositoprazo != null)
+        {
+          <div class="d-flex gap-2 mb-2">
+            <a asp-action="Edit" asp-route-id="@Model.Depositoprazo.DepositoprazoId" class="btn btn-warning w-50">Editar</a>
+            <a asp-action="Delete" asp-route-id="@Model.Depositoprazo.DepositoprazoId" class="btn btn-danger   w-50">Eliminar</a>
+          </div>
+        }
+        else if (fundo != null && tp == "Admin")
+        {
+          <div class="d-flex gap-2 mb-2">
+            <a asp-action="EditFundo" asp-route-id="@fundo.FundoinvestimentoId" class="btn btn-warning w-50">Editar</a>
+            <a asp-action="DeleteFundo" asp-route-id="@fundo.FundoinvestimentoId" class="btn btn-danger   w-50">Eliminar</a>
+          </div>
         }
         else if (Model.Imovelarrendado != null)
         {
-        <h5 class="text-wrap">Imóvel Arrendado - @Model.Imovelarrendado.Designacao</h5>
+          <div class="d-flex gap-2 mb-2">
+            <a asp-action="EditImovel" asp-route-id="@Model.Imovelarrendado.ImovelarrendadoId" class="btn btn-warning w-50">Editar</a>
+            <a asp-action="DeleteImovel" asp-route-id="@Model.Imovelarrendado.ImovelarrendadoId" class="btn btn-danger   w-50">Eliminar</a>
+          </div>
         }
+      </div>
     </div>
-
-    <div class="card-body d-flex flex-column">
-        <ul class="list-group list-group-flush mb-3">
-            <li class="list-group-item"><strong>Duração:</strong> @Model.Duracaomeses meses</li>
-
-            @if (Model.Depositoprazo != null)
-            {
-            <li class="list-group-item"><strong>Taxa Juro:</strong> @Model.Depositoprazo.Taxajuroanual%</li>
-            <li class="list-group-item"><strong>Valor Inicial:</strong> @Model.Depositoprazo.Valorinicial.ToString("C")</li>
-            <li class="list-group-item"><strong>Valor Atual:</strong> @Model.Depositoprazo.Valoratual.ToString("C")</li>
-            <li class="list-group-item"><strong>Banco:</strong> @Model.Depositoprazo.Banco?.Nome</li>
-            }
-            else if (fundo != null)
-            {
-            <li class="list-group-item"><strong>Banco:</strong> @fundo.Banco?.Nome</li>
-            <li class="list-group-item"><strong>Valor do Fundo:</strong> @fundo.Montanteinvestido.ToString("C")</li>
-            <li class="list-group-item"><strong>Valor Atual:</strong> @valorAtualComJuros.ToString("C")</li>
-            <li class="list-group-item"><strong>Taxa Juro:</strong> @fundo.Taxajuropdefeito%</li>
-            <li class="list-group-item"><strong>Quantidade:</strong> @fundo.Quantidade</li>
-            }
-            else if (Model.Imovelarrendado != null)
-            {
-            <li class="list-group-item"><strong>Localização:</strong> @Model.Imovelarrendado.Localizacao</li>
-            <li class="list-group-item"><strong>Valor do Imóvel:</strong> @Model.Imovelarrendado.Valorimovel.ToString("C")</li>
-            <li class="list-group-item"><strong>Valor da Renda:</strong> @Model.Imovelarrendado.Valorrenda.ToString("C")</li>
-            <li class="list-group-item"><strong>Condomínio:</strong> @Model.Imovelarrendado.Valormensalcondo.ToString("C")</li>
-            <li class="list-group-item"><strong>Despesas:</strong> @Model.Imovelarrendado.Valoranualdespesas.ToString("C")</li>
-            }
-
-            <li class="list-group-item"><strong>Imposto:</strong> @Model.Percimposto%</li>
-        </ul>
-
-        <div class="mt-auto">
-            @if (fundo != null && (tp == "Cliente" || tp == "UserManager"))
-            {
-            if (Model.Carteira?.UtilizadorId == userId)
-            {
-            <form asp-action="AdicionarQuantidadeFundo" method="post" class="mb-2">
-                <input type="hidden" name="fundoId" value="@fundo.FundoinvestimentoId" />
-                <div class="mb-2">
-                    <label><strong>Adicionar quantidade:</strong></label>
-                    <div class="d-flex gap-2 flex-wrap mb-2">
-                        <input type="number" name="valor" class="form-control form-control-sm w-50" placeholder="Quantidade..." min="0.01" step="0.01" required />
-                    </div>
-                </div>
-                <div class="text-end">
-                    <button type="submit" class="btn btn-primary w-100">Adicionar</button>
-                </div>
-            </form>
-            }
-            else
-            {
-            <form asp-action="AdicionarFundo" method="post" class="mt-2">
-                <input type="hidden" name="fundoId" value="@fundo.FundoinvestimentoId" />
-                <input type="hidden" name="valor" value="@fundo.Montanteinvestido" />
-                <button type="submit" class="btn btn-success w-100">Adicionar à Carteira</button>
-            </form>
-            }
-            }
-
-            @if (Model.Depositoprazo != null)
-            {
-            <div class="d-flex gap-2 mb-2">
-                <a asp-action="Edit" asp-route-id="@Model.Depositoprazo.DepositoprazoId" class="btn btn-warning w-50">Editar</a>
-                <a asp-action="Delete" asp-route-id="@Model.Depositoprazo.DepositoprazoId" class="btn btn-danger w-50">Eliminar</a>
-            </div>
-            }
-            else if (fundo != null && tp == "Admin")
-            {
-            <div class="d-flex gap-2 mb-2">
-                <a asp-action="EditFundo" asp-route-id="@fundo.FundoinvestimentoId" class="btn btn-warning w-50">Editar</a>
-                <a asp-action="DeleteFundo" asp-route-id="@fundo.FundoinvestimentoId" class="btn btn-danger w-50">Eliminar</a>
-            </div>
-            }
-            else if (Model.Imovelarrendado != null)
-            {
-            <div class="d-flex gap-2 mb-2">
-                <a asp-action="EditImovel" asp-route-id="@Model.Imovelarrendado.ImovelarrendadoId" class="btn btn-warning w-50">Editar</a>
-                <a asp-action="DeleteImovel" asp-route-id="@Model.Imovelarrendado.ImovelarrendadoId" class="btn btn-danger w-50">Eliminar</a>
-            </div>
-            }
-        </div>
-    </div>
+  </div>
 </div>
+
+@* inicializar tooltips e collapse *@
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    // tooltips
+    var tt = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tt.forEach(function(el){ new bootstrap.Tooltip(el); });
+  });
+</script>

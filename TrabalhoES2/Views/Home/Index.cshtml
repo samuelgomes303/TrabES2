@@ -1,8 +1,150 @@
-﻿@{
+﻿@using TrabalhoES2.Services
+@model TrabalhoES2.Models.Carteira
+
+@{
     ViewData["Title"] = "Home Page";
+
+    // Garante que não temos NullReferenceException se Model ou a lista for nula
+    var ativos = Model?.Ativofinanceiros 
+                  ?? new List<TrabalhoES2.Models.Ativofinanceiro>();
+
+    // Calcular totais
+    decimal totalInvestido = 0m, totalAtual = 0m;
+    int countDep = 0, countFnd = 0, countImv = 0;
+    foreach (var ativo in ativos)
+    {
+        if (ativo.Depositoprazo != null)
+        {
+            totalInvestido += ativo.Depositoprazo.Valorinicial;
+            totalAtual     += ativo.Depositoprazo.Valoratual;
+            countDep++;
+        }
+        else if (ativo.Fundoinvestimento != null)
+        {
+            totalInvestido += ativo.Fundoinvestimento.Montanteinvestido;
+            totalAtual     += FundoInvestimentoService
+                                .CalcularValorAtualComJuros(ativo.Fundoinvestimento, ativo);
+            countFnd++;
+        }
+        else if (ativo.Imovelarrendado != null)
+        {
+            totalInvestido += ativo.Imovelarrendado.Valorimovel;
+            totalAtual     += ImovelService
+                                .CalcularValorAtualComRendimentos(ativo.Imovelarrendado, ativo);
+            countImv++;
+        }
+    }
+    var lucroTotal = totalAtual - totalInvestido;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+@* — estilos e estrutura dinâmica insana para o dashboard — *@
+<style>
+  .hero {
+    position: relative;
+    padding: 3rem 1rem;
+    background: linear-gradient(120deg, #84fab0, #8fd3f4);
+    color: #333;
+    text-shadow: 1px 1px 2px rgba(255,255,255,0.7);
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+  .hero:before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: rgba(255,255,255,0.2);
+    transform: rotate(45deg);
+    animation: slide 10s linear infinite;
+  }
+  @@keyframes slide {
+    to { transform: rotate(45deg) translate(50%, 50%); }
+  }
+  .hero h1 { font-size: 3rem; }
+  .counters {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    margin-top: 2rem;
+  }
+  .counter {
+    text-align: center;
+  }
+  .counter .value {
+    font-size: 2.5rem;
+    font-weight: 700;
+  }
+  .chart-container {
+    max-width: 400px;
+    margin: 2rem auto;
+  }
+</style>
+
+<div class="hero text-center">
+  <h1 class="display-4">Bem-vindo, @Model?.Utilizador?.Nome!</h1>
+  <p class="lead">Visão geral da sua carteira de ativos</p>
+
+  <div class="counters">
+    <div class="counter">
+      <div class="value" id="investido-counter">@totalInvestido.ToString("C")</div>
+      <div>Total Investido</div>
+    </div>
+    <div class="counter">
+      <div class="value" id="atual-counter">@totalAtual.ToString("C")</div>
+      <div>Valor Atual</div>
+    </div>
+    <div class="counter">
+      <div class="value" id="lucro-counter">@lucroTotal.ToString("C")</div>
+      <div>Lucro Total</div>
+    </div>
+  </div>
+
+  <div class="chart-container">
+    <canvas id="assetChart"></canvas>
+  </div>
 </div>
+
+@section Scripts {
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){
+      // Animar counters
+      function animateCounter(id, endVal) {
+        const el = document.getElementById(id);
+        const duration = 2000;
+        let startTime = null;
+        function step(timestamp) {
+          if (!startTime) startTime = timestamp;
+          const progress = Math.min((timestamp - startTime) / duration, 1);
+          const current  = endVal * progress;
+          el.textContent = current.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+          if (progress < 1) window.requestAnimationFrame(step);
+        }
+        window.requestAnimationFrame(step);
+      }
+
+      animateCounter('investido-counter', @totalInvestido);
+      animateCounter('atual-counter',     @totalAtual);
+      animateCounter('lucro-counter',     @lucroTotal);
+
+      // Donut chart de tipos de ativos
+      const ctx = document.getElementById('assetChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Depósitos', 'Fundos', 'Imóveis'],
+          datasets: [{
+            data: [@countDep, @countFnd, @countImv],
+            backgroundColor: ['#007bff', '#28a745', '#ffc107']
+          }]
+        },
+        options: {
+          responsive: true,
+          animation: { animateRotate: true, duration: 1500 },
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    });
+  </script>
+}

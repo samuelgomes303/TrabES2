@@ -3,100 +3,166 @@
 @inject SignInManager<Utilizador> SignInManager
 @inject UserManager<Utilizador> UserManager
 
+@* — estilos isolados para o Layout principal *@
+<style>
+  /* Body flex para footer fixo */
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Navbar customizada */
+  .navbar {
+    background: linear-gradient(135deg, #0052D4, #4364F7);
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  }
+  .navbar-brand, .nav-link {
+    color: #fff !important;
+    font-weight: 500;
+    transition: color .2s;
+  }
+  .nav-link:hover {
+    color: #ffd54f !important;
+  }
+  .navbar-toggler {
+    border-color: rgba(255,255,255,.5);
+  }
+  .navbar-toggler-icon {
+    filter: invert(1);
+  }
+
+  /* Container principal */
+  .app-container {
+    flex: 1;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  @@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Footer fixo */
+  footer.footer {
+    background: #f8f9fa;
+    padding: 1rem 0;
+    margin-top: auto;
+    text-align: center;
+    font-size: .9rem;
+    color: #6c757d;
+    border-top: 1px solid #e4e5e7;
+  }
+</style>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>@ViewData["Title"] - TrabalhoES2</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
-    <link rel="stylesheet" href="~/TrabalhoES2.styles.css" asp-append-version="true"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>@ViewData["Title"] - TrabalhoES2</title>
+
+  <!-- Bootstrap Flatly + SB Admin -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css"
+        crossorigin="anonymous" />
+  <link rel="stylesheet" href="~/sbadmin/css/sb-admin-2.min.css" />
+  <link rel="stylesheet" href="~/sbadmin/vendor/fontawesome-free/css/all.min.css" />
 </head>
+
 <body>
-<header>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-        <div class="container-fluid">
-            <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">TrabalhoES2</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
-                    aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+  <header>
+    <nav class="navbar navbar-expand-sm navbar-dark">
+      <div class="container">
+        <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+          <i class="fas fa-chart-line me-1"></i>TrabalhoES2
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
 
-            <div class="collapse navbar-collapse" id="navbarContent">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                    </li>
-                    @if (SignInManager.IsSignedIn(User) && User.IsInRole("Cliente"))
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Carteira" asp-action="Index">Minha Carteira</a>
-                        </li>
-                    }
-
-                    @if (SignInManager.IsSignedIn(User) && (User.IsInRole("Admin") || User.IsInRole("UserManager")))
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">
-                                @(User.IsInRole("Admin") ? "Gestão de Utilizadores" : "Gestão de Clientes")
-                            </a>
-                        </li>
-                    }
-                    @if (SignInManager.IsSignedIn(User) && User.IsInRole("Admin"))
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Carteira" asp-action="GestaoFundos">Gestão de Ativos</a>
-                        </li>
-                    }
-                </ul>
-
-                <ul class="navbar-nav ms-auto">
-                    @if (SignInManager.IsSignedIn(User))
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index">Hello @UserManager.GetUserName(User)!</a>
-                        </li>
-                        <li class="nav-item">
-                            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home")" method="post" class="form-inline">
-                                <button type="submit" class="nav-link btn btn-link text-dark border-0">Logout</button>
-                            </form>
-                        </li>
-                    }
-                    else
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Register">Register</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login">Login</a>
-                        </li>
-                    }
-                </ul>
-
-            </div>
+        <div class="collapse navbar-collapse" id="navbarContent">
+          <ul class="navbar-nav me-auto">
+            @if (SignInManager.IsSignedIn(User) && User.IsInRole("Cliente"))
+            {
+              <li class="nav-item">
+                <a class="nav-link" asp-controller="Carteira" asp-action="Index">
+                  <i class="fas fa-wallet me-1"></i>Minha Carteira
+                </a>
+              </li>
+            }
+            @if (SignInManager.IsSignedIn(User) && (User.IsInRole("Admin") || User.IsInRole("UserManager")))
+            {
+              <li class="nav-item">
+                <a class="nav-link" asp-controller="User" asp-action="Index">
+                  <i class="fas fa-users-cog me-1"></i>
+                  @(User.IsInRole("Admin") ? "Gestão de Utilizadores" : "Gestão de Clientes")
+                </a>
+              </li>
+            }
+            @if (SignInManager.IsSignedIn(User) && User.IsInRole("Admin"))
+            {
+              <li class="nav-item">
+                <a class="nav-link" asp-controller="Carteira" asp-action="GestaoFundos">
+                  <i class="fas fa-chart-pie me-1"></i>Gestão de Ativos
+                </a>
+              </li>
+            }
+          </ul>
+          <ul class="navbar-nav ms-auto">
+            @if (SignInManager.IsSignedIn(User))
+            {
+              <li class="nav-item">
+                <a class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index">
+                  <i class="fas fa-user-circle me-1"></i>Hello @UserManager.GetUserName(User)!
+                </a>
+              </li>
+              <li class="nav-item">
+                <form class="d-inline" asp-area="Identity" asp-page="/Account/Logout"
+                      asp-route-returnUrl="@Url.Action("Index","Home")" method="post">
+                  <button type="submit" class="nav-link btn btn-link text-white border-0">
+                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                  </button>
+                </form>
+              </li>
+            }
+            else
+            {
+              <li class="nav-item">
+                <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">
+                  <i class="fas fa-user-plus me-1"></i>Register
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" asp-area="Identity" asp-page="/Account/Login">
+                  <i class="fas fa-sign-in-alt me-1"></i>Login
+                </a>
+              </li>
+            }
+          </ul>
         </div>
+      </div>
     </nav>
-</header>
+  </header>
 
-<div class="container">
-    <main role="main" class="pb-3">
-        @RenderBody()
+  <div class="container app-container">
+    <main role="main">
+      @RenderBody()
     </main>
-</div>
+  </div>
 
-<footer class="border-top footer text-muted">
+  <footer class="footer">
     <div class="container">
-        &copy; 2025 - TrabalhoES2 - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+      &copy; 2025 – TrabalhoES2
     </div>
-</footer>
-<script src="~/lib/jquery/dist/jquery.min.js"></script>
-<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-<script src="~/js/site.js" asp-append-version="true"></script>
-@await RenderSectionAsync("Scripts", required: false)
+  </footer>
+
+  <script src="~/lib/jquery/dist/jquery.min.js"></script>
+  <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="~/js/site.js" asp-append-version="true"></script>
+  @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

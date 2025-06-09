@@ -4,21 +4,50 @@
     ViewData["Title"] = "Gestão de Ativos";
 }
 
-<h1 class="mb-4">Gestão de Ativos do Administrador</h1>
+@* — estilos e script isolados para gestão de ativos *@
+<style>
+  .header-title {
+    color: #0052D4;
+    margin-bottom: 1rem;
+  }
+  .actions {
+    margin-bottom: 1.5rem;
+  }
+  .search-box {
+    max-width: 300px;
+    margin-left: auto;
+  }
+  .asset-grid .col-md-4 {
+    margin-bottom: 1.5rem;
+  }
+</style>
 
-<div class="d-flex gap-3 mb-4">
-    <a asp-action="Create" class="btn btn-success">+ Novo Depósito a Prazo</a>
-    <a asp-action="CreateFundo" class="btn btn-primary">+ Novo Fundo de Investimento</a>
-    <a asp-action="CreateImovel" class="btn btn-info">+ Novo Imóvel Arrendado</a>
-    <a asp-action="SelecionarRelatorio" asp-controller="Carteira" class="btn btn-warning">Selecionar Relatório</a>
+<h1 class="header-title">Gestão de Ativos do Administrador</h1>
+
+<div class="d-flex flex-wrap gap-3 actions">
+  <a asp-action="Create" class="btn btn-success">+ Depósito a Prazo</a>
+  <a asp-action="CreateFundo" class="btn btn-primary">+ Fundo de Investimento</a>
+  <a asp-action="CreateImovel" class="btn btn-info">+ Imóvel Arrendado</a>
+  <a asp-action="SelecionarRelatorio" asp-controller="Carteira" class="btn btn-warning">Selecionar Relatório</a>
+  <input type="text" id="search-ativo" class="form-control search-box" placeholder="Procurar ativo..." />
 </div>
 
-<div class="row">
-    @foreach (var ativo in Model)
-    {
-        <div class="col-md-4 mb-4">
-            @Html.Partial("_CardAtivo", ativo)
-        </div>
-    }
+<div class="row asset-grid" id="grid-ativos">
+  @foreach (var ativo in Model)
+  {
+    <div class="col-md-4" data-nome="@ativo.Depositoprazo?.Titular?.ToLower() @ativo.Fundoinvestimento?.Nome?.ToLower() @ativo.Imovelarrendado?.Designacao?.ToLower()">
+      @Html.Partial("_CardAtivo", ativo)
+    </div>
+  }
 </div>
 
+@* — script inline para filtrar por nome *@
+<script>
+  document.getElementById('search-ativo').addEventListener('input', function(){
+    var termo = this.value.trim().toLowerCase();
+    document.querySelectorAll('#grid-ativos .col-md-4').forEach(function(col){
+      var nome = col.getAttribute('data-nome');
+      col.style.display = (!termo || nome.includes(termo)) ? 'block' : 'none';
+    });
+  });
+</script>

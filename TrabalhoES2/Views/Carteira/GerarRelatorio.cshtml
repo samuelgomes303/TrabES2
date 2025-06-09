@@ -1,138 +1,97 @@
 ﻿@model TrabalhoES2.Models.Carteira
-
 @{
     ViewData["Title"] = "Relatório da Carteira";
     var utilizador = Model.Utilizador;
     var ativos = (List<dynamic>)ViewBag.AtivosRelatorio ?? new List<dynamic>();
-    var performanceMensal = ViewBag.PerformanceMensal as List<dynamic> ?? new List<dynamic>();
+    bool hasAtivos = ativos.Any();
 }
 
-<h1>@ViewData["Title"]</h1>
+@* — estilos isolados para relatório de carteira *@
+<style>
+  .header-title {
+    color: #17a2b8;
+    text-shadow: 1px 1px 2px rgba(0,0,0,.1);
+    margin-bottom: 1rem;
+  }
+  .user-info {
+    margin-bottom: 2rem;
+  }
+  .asset-card {
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,.05);
+    transition: transform .2s;
+  }
+  .asset-card:hover {
+    transform: translateY(-4px);
+  }
+  .totals .list-group-item {
+    background: linear-gradient(90deg, #84fab0, #8fd3f4);
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    border-radius: .5rem;
+    margin-bottom: .5rem;
+  }
+  .period p {
+    margin: .25rem 0;
+  }
+</style>
 
-<h4>Utilizador: @utilizador?.Nome (@utilizador?.Email)</h4>
-<h5>Carteira ID: @Model.CarteiraId</h5>
+<h1 class="header-title">@ViewData["Title"]</h1>
+
+<div class="user-info">
+  <h4>Utilizador: <strong>@utilizador?.Nome</strong> (@utilizador?.Email)</h4>
+  <h5>Carteira ID: <span class="badge bg-info">@Model.CarteiraId</span></h5>
+</div>
 
 <hr />
 
-@if (ativos.Any())
+@if (hasAtivos)
 {
-    <div class="row">
-        @foreach (var ativo in ativos)
-        {
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h5>@ativo.TipoAtivo</h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item"><strong>Lucro Bruto:</strong> @ativo.LucroBruto.ToString("C")</li>
-                            <li class="list-group-item"><strong>Impostos:</strong> @ativo.Impostos.ToString("C")</li>
-                            <li class="list-group-item"><strong>Lucro Líquido:</strong> @ativo.LucroLiquido.ToString("C")</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
+  <div class="row mb-4">
+    @foreach (var ativo in ativos)
+    {
+      <div class="col-md-4 mb-4">
+        <div class="card asset-card h-100">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">@ativo.TipoAtivo</h5>
+          </div>
+          <div class="card-body">
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item"><strong>Lucro Bruto:</strong> @ativo.LucroBruto.ToString("C")</li>
+              <li class="list-group-item"><strong>Impostos:</strong> @ativo.Impostos.ToString("C")</li>
+              <li class="list-group-item"><strong>Lucro Líquido:</strong> @ativo.LucroLiquido.ToString("C")</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
 }
 else
 {
-    <p>Esta carteira não contém ativos financeiros.</p>
+  <div class="alert alert-warning">
+    Esta carteira não contém ativos financeiros.
+  </div>
 }
 
 <hr />
 
 <h4>Totais:</h4>
-<ul class="list-group">
-    <li class="list-group-item"><strong>Lucro Total Bruto:</strong> @ViewBag.LucroTotalBruto.ToString("C")</li>
-    <li class="list-group-item"><strong>Impostos Totais:</strong> @ViewBag.ImpostosTotais.ToString("C")</li>
-    <li class="list-group-item"><strong>Lucro Total Líquido:</strong> @ViewBag.LucroTotalLiquido.ToString("C")</li>
-    <li class="list-group-item"><strong>Lucro Mensal Médio Bruto:</strong> @ViewBag.LucroMensalMedioBruto.ToString("C")</li>
-    <li class="list-group-item"><strong>Lucro Mensal Médio Líquido:</strong> @ViewBag.LucroMensalMedioLiquido.ToString("C")</li>
-</ul>
-
-<hr />
-
-<h4>Performance Mensal dos Ativos</h4>
-<div class="mb-3">
-    <label for="tipoLucro" class="form-label">Tipo de Performance</label>
-    <select id="tipoLucro" class="form-select" style="width:auto;display:inline">
-        <option value="LucroBruto">Lucro Bruto</option>
-        <option value="LucroLiquido">Lucro Líquido</option>
-        <option value="Impostos">Impostos</option>
-    </select>
+<div class="totals mb-4">
+  <ul class="list-group p-2">
+    <li class="list-group-item">Lucro Total Bruto: @ViewBag.LucroTotalBruto.ToString("C")</li>
+    <li class="list-group-item">Impostos Totais: @ViewBag.ImpostosTotais.ToString("C")</li>
+    <li class="list-group-item">Lucro Total Líquido: @ViewBag.LucroTotalLiquido.ToString("C")</li>
+    <li class="list-group-item">Lucro Mensal Médio Bruto: @ViewBag.LucroMensalMedioBruto.ToString("C")</li>
+    <li class="list-group-item">Lucro Mensal Médio Líquido: @ViewBag.LucroMensalMedioLiquido.ToString("C")</li>
+  </ul>
 </div>
-<canvas id="performanceChart" height="100"></canvas>
-
-@section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Dados vindos do ViewBag.PerformanceMensal (serializado em JSON)
-        const dataServer = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.PerformanceMensal ?? new List<dynamic>()));
-
-        // Extrai meses únicos (eixo X)
-        const meses = [...new Set(dataServer.map(x => x.Mes))];
-
-        // Extrai tipos de ativo únicos (linhas do gráfico)
-        const tiposAtivo = [...new Set(dataServer.map(x => x.TipoAtivo))];
-
-        // Função para datasets conforme a métrica
-        function getDatasets(metric) {
-            return tiposAtivo.map((tipo, idx) => ({
-                label: tipo,
-                data: meses.map(mes => {
-                    const item = dataServer.find(x => x.Mes === mes && x.TipoAtivo === tipo);
-                    return item ? item[metric] : 0;
-                }),
-                fill: false,
-                tension: 0.2,
-                borderWidth: 2,
-                borderColor: `hsl(${idx * 60}, 70%, 50%)`,
-                backgroundColor: `hsl(${idx * 60}, 70%, 50%)`
-            }));
-        }
-
-        // Setup inicial
-        let metric = 'LucroBruto';
-        const ctx = document.getElementById('performanceChart').getContext('2d');
-        let chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: meses,
-                datasets: getDatasets(metric)
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'top' },
-                    title: { display: true, text: 'Performance Mensal dos Ativos' }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function (value) {
-                                return value.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        // Atualiza o gráfico ao mudar a opção do select
-        document.getElementById('tipoLucro').addEventListener('change', function () {
-            metric = this.value;
-            chart.data.datasets = getDatasets(metric);
-            chart.update();
-        });
-    </script>
-}
 
 <hr />
 
-<h4>Período:</h4>
-<p><strong>Data Início:</strong> @ViewBag.DataInicio.ToShortDateString()</p>
-<p><strong>Data Fim:</strong> @ViewBag.DataFim.ToShortDateString()</p>
-
+<div class="period">
+  <h4>Período:</h4>
+  <p><strong>Data Início:</strong> @((DateTime)ViewBag.DataInicio)</p>
+  <p><strong>Data Fim:</strong>   @((DateTime)ViewBag.DataFim)</p>
+</div>

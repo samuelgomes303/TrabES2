@@ -4,94 +4,133 @@
     ViewData["Title"] = "Escolher Tipo de Relatório";
 }
 
-<h1>@ViewData["Title"]</h1>
+@* — estilos isolados para escolha de relatórios *@
+<style>
+  .page-header {
+    color: #17a2b8;
+    text-shadow: 1px 1px 2px rgba(0,0,0,.1);
+    margin-bottom: 1.5rem;
+  }
+  .user-info {
+    margin-bottom: 2rem;
+  }
+  .report-options .card {
+    border-radius: 1rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,.05);
+    transition: transform .2s;
+  }
+  .report-options .card:hover {
+    transform: translateY(-5px);
+  }
+  .report-card .card-header {
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+  }
+  .report-card.lucro .card-header {
+    background: linear-gradient(135deg, #28a745, #218838);
+  }
+  .report-card.imposto .card-header {
+    background: linear-gradient(135deg, #dc3545, #a71d2a);
+  }
+  .report-card.banco .card-header {
+    background: linear-gradient(135deg, #17a2b8, #117a8b);
+  }
+  .report-card .card-body {
+    padding: 1.5rem;
+  }
+  .report-card .btn {
+    width: 100%;
+    border-radius: .5rem;
+  }
+  .form-group {
+    margin-bottom: 1rem;
+  }
+</style>
+
+<h1 class="page-header">@ViewData["Title"]</h1>
+
 @if (Model != null)
 {
-    <h4>Utilizador: @Model.Utilizador?.Nome (@Model.Utilizador?.Email)</h4>
-    <h5>Carteira ID: @Model.CarteiraId</h5>
-}
-else
-{
-    <h4>Relatórios Administrativos</h4>
+  <div class="user-info">
+    <h4>Utilizador: <strong>@Model.Utilizador?.Nome</strong> (@Model.Utilizador?.Email)</h4>
+    <h5>Carteira ID: <span class="badge bg-info">@Model.CarteiraId</span></h5>
+  </div>
 }
 
-<hr/>
-
-<div class="row">
-    @if (Model != null)
-    {
-        <div class="col-md-4">
-            <form asp-action="GerarRelatorio" asp-controller="Carteira" method="get">
-                <input type="hidden" name="id" value="@Model.CarteiraId" />
-                <div class="form-group">
-                    <label>Data Início</label>
-                    <input type="date" class="form-control" name="dataInicio" required />
-                </div>
-                <div class="form-group">
-                    <label>Data Fim</label>
-                    <input type="date" class="form-control" name="dataFim" required />
-                </div>
-                <button type="submit" class="btn btn-primary">Gerar Relatório de Lucros</button>
-            </form>
+<div class="row report-options g-4">
+  @if (Model != null)
+  {
+    <div class="col-md-4">
+      <div class="card report-card lucro h-100">
+        <div class="card-header">
+          <i class="fas fa-chart-line me-2"></i> Relatório de Lucros
         </div>
-        <div class="col-md-4">
-            <form asp-action="GerarRelatorioImpostos" asp-controller="Carteira" method="get">
-                <input type="hidden" name="id" value="@Model.CarteiraId" />
-                <div class="form-group">
-                    <label>Data Início</label>
-                    <input type="date" class="form-control" name="dataInicio" required />
-                </div>
-                <div class="form-group">
-                    <label>Data Fim</label>
-                    <input type="date" class="form-control" name="dataFim" required />
-                </div>
-                <button type="submit" class="btn btn-secondary">Gerar Relatório de Impostos</button>
-            </form>
+        <div class="card-body">
+          <form asp-action="GerarRelatorio" asp-controller="Carteira" method="get">
+            <input type="hidden" name="id" value="@Model.CarteiraId" />
+            <div class="form-group">
+              <label for="lucroDataInicio" class="form-label">Data Início</label>
+              <input id="lucroDataInicio" type="date" name="dataInicio" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label for="lucroDataFim" class="form-label">Data Fim</label>
+              <input id="lucroDataFim" type="date" name="dataFim" class="form-control" required />
+            </div>
+            <button type="submit" class="btn btn-light mt-2">
+              <i class="fas fa-play me-1"></i> Gerar
+            </button>
+          </form>
         </div>
-    }
-    @if (User.IsInRole("Admin"))
-    {
-        <div class="col-md-4">
-            <form asp-action="GerarRelatorioBancos" asp-controller="Carteira" method="get">
-                <div class="form-group">
-                    <label>Data Início</label>
-                    <input type="date" class="form-control" name="dataInicio" required/>
-                </div>
-                <div class="form-group">
-                    <label>Data Fim</label>
-                    <input type="date" class="form-control" name="dataFim" required/>
-                </div>
-                <button type="submit" class="btn btn-info">Gerar Relatório de Bancos</button>
-            </form>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card report-card imposto h-100">
+        <div class="card-header">
+          <i class="fas fa-receipt me-2"></i> Relatório de Impostos
         </div>
-    }
+        <div class="card-body">
+          <form asp-action="GerarRelatorioImpostos" asp-controller="Carteira" method="get">
+            <input type="hidden" name="id" value="@Model.CarteiraId" />
+            <div class="form-group">
+              <label for="impDataInicio" class="form-label">Data Início</label>
+              <input id="impDataInicio" type="date" name="dataInicio" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label for="impDataFim" class="form-label">Data Fim</label>
+              <input id="impDataFim" type="date" name="dataFim" class="form-control" required />
+            </div>
+            <button type="submit" class="btn btn-light mt-2">
+              <i class="fas fa-play me-1"></i> Gerar
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
+  @if (User.IsInRole("Admin"))
+  {
+    <div class="col-md-4">
+      <div class="card report-card banco h-100">
+        <div class="card-header">
+          <i class="fas fa-university me-2"></i> Relatório de Bancos
+        </div>
+        <div class="card-body">
+          <form asp-action="GerarRelatorioBancos" asp-controller="Carteira" method="get">
+            <div class="form-group">
+              <label for="bancoDataInicio" class="form-label">Data Início</label>
+              <input id="bancoDataInicio" type="date" name="dataInicio" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label for="bancoDataFim" class="form-label">Data Fim</label>
+              <input id="bancoDataFim" type="date" name="dataFim" class="form-control" required />
+            </div>
+            <button type="submit" class="btn btn-light mt-2">
+              <i class="fas fa-play me-1"></i> Gerar
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
