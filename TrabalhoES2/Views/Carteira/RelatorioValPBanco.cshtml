@@ -1,8 +1,8 @@
 ﻿@{
-ViewData["Title"] = "Relatório de Bancos";
-var relatorio = ViewBag.RelatorioBanco as IEnumerable<dynamic>;
-DateTime dataInicio = ViewBag.DataInicio;
-DateTime dataFim = ViewBag.DataFim;
+    ViewData["Title"] = "Relatório de Bancos";
+    var relatorio = ViewBag.RelatorioBanco as IEnumerable<dynamic>;
+    DateTime dataInicio = ViewBag.DataInicio;
+    DateTime dataFim = ViewBag.DataFim;
 }
 
 <h1>@ViewData["Title"]</h1>
@@ -11,29 +11,29 @@ DateTime dataFim = ViewBag.DataFim;
 
 @if (relatorio != null && relatorio.Any())
 {
-<table class="table table-bordered table-striped">
-    <thead>
-    <tr>
-        <th>Banco</th>
-        <th>Valor Total Depositado</th>
-        <th>Custo Total dos Juros Pagos</th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var item in relatorio)
-    {
-    <tr>
-        <td>@item.BancoNome</td>
-        <td>@item.ValorTotalDepositado.ToString("C")</td>
-        <td>@item.CustoTotalJuros.ToString("C")</td>
-    </tr>
-    }
-    </tbody>
-</table>
+    <table class="table table-bordered table-striped">
+        <thead>
+        <tr>
+            <th>Banco</th>
+            <th>Valor Total Depositado</th>
+            <th>Custo Total dos Juros Pagos</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in relatorio)
+        {
+            <tr>
+                <td>@item.BancoNome</td>
+                <td>@item.ValorTotalDepositado.ToString("C")</td>
+                <td>@item.CustoTotalJuros.ToString("C")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
 }
 else
 {
-<div class="alert alert-info">Nenhum dado encontrado para este período.</div>
+    <div class="alert alert-info">Nenhum dado encontrado para este período.</div>
 }
 
 <hr />
