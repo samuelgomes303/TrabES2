@@ -1,43 +1,95 @@
-﻿@{
+﻿@model TrabalhoES2.Models.Carteira
+@{
     ViewData["Title"] = "Relatório de Impostos Mensais";
-    var impostos = ViewBag.ImpostosMensais as List<dynamic>;
+    var impostos = ViewBag.ImpostosMensais as List<dynamic> ?? new List<dynamic>();
     var utilizador = Model.Utilizador;
 }
 
-<h1>@ViewData["Title"]</h1>
-<h4>Utilizador: @utilizador?.Nome (@utilizador?.Email)</h4>
-<h5>Carteira ID: @Model.CarteiraId</h5>
+@* — estilos isolados para relatório de impostos *@
+<style>
+  .page-header {
+    color: #dc3545;
+    text-shadow: 1px 1px 2px rgba(0,0,0,.1);
+    margin-bottom: 1rem;
+  }
+  .user-info {
+    margin-bottom: 1.5rem;
+  }
+  .report-card {
+    border-radius: 1rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,.05);
+    margin-bottom: 2rem;
+  }
+  .report-card .card-header {
+    background: linear-gradient(135deg, #dc3545, #a71d2a);
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.25rem;
+  }
+  .table-report {
+    margin: 0;
+    border-radius: 0 0 1rem 1rem;
+    overflow: hidden;
+  }
+  .table-report th {
+    background: #f8d7da;
+    color: #721c24;
+    text-transform: uppercase;
+  }
+  .table-report td, .table-report th {
+    vertical-align: middle;
+    text-align: center;
+  }
+  .period {
+    font-style: italic;
+    margin-top: 1rem;
+  }
+</style>
 
-<hr />
+<h1 class="page-header">@ViewData["Title"]</h1>
+<div class="user-info">
+  <h4>Utilizador: <strong>@utilizador?.Nome</strong> (@utilizador?.Email)</h4>
+  <h5>Carteira ID: <span class="badge bg-danger">@Model.CarteiraId</span></h5>
+</div>
 
-@if (impostos != null && impostos.Any())
-{
-    <table class="table table-bordered">
+<div class="card report-card">
+  <div class="card-header">Dados de Impostos por Mês</div>
+  @if (impostos.Any())
+  {
+    <div class="table-responsive table-report">
+      <table class="table table-bordered mb-0">
         <thead>
-        <tr>
+          <tr>
             <th>Designação</th>
             <th>Tipo de Ativo</th>
             <th>Mês/Ano</th>
             <th>Valor do Imposto</th>
-        </tr>
+          </tr>
         </thead>
         <tbody>
-        @foreach (dynamic imposto in impostos)
-        {
+          @foreach (var imp in impostos)
+          {
             <tr>
-                <td>@imposto.Designacao</td>
-                <td>@imposto.Tipo</td>
-                <td>@imposto.MesAno</td>
-                <td>@imposto.ValorImposto.ToString("C")</td>
+              <td>@imp.Designacao</td>
+              <td>@imp.Tipo</td>
+              <td>@imp.MesAno</td>
+              <td>@imp.ValorImposto.ToString("C")</td>
             </tr>
-        }
+          }
         </tbody>
-    </table>
-}
-else
-{
-    <p>Não há dados de impostos mensais para este período.</p>
-}
-
-<hr />
-<p><strong>Período:</strong> @ViewBag.DataInicio.ToShortDateString() - @ViewBag.DataFim.ToShortDateString()</p>
+      </table>
+    </div>
+  }
+  else
+  {
+    <div class="card-body">
+      <div class="alert alert-info mb-0">
+        Não há dados de impostos mensais para este período.
+      </div>
+    </div>
+  }
+  <div class="card-footer period">
+    <strong>Período:</strong>
+    @ViewBag.DataInicio.ToShortDateString() — @ViewBag.DataFim.ToShortDateString()
+  </div>
+</div>

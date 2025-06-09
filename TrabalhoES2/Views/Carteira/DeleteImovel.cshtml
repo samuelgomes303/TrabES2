@@ -1,26 +1,64 @@
 ﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model TrabalhoES2.Models.Imovelarrendado
+
 @{
-ViewData["Title"] = "Eliminar Imóvel Arrendado";
+    ViewData["Title"] = "Eliminar Imóvel Arrendado";
 }
 
-<h2>@ViewData["Title"]</h2>
+@* — estilos isolados para a confirmação de eliminação *@
+<style>
+  .form-card {
+    max-width: 550px;
+    margin: 2rem auto;
+    border-radius: 1rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,.1);
+    overflow: hidden;
+  }
+  .form-card .card-header {
+    background: #dc3545;
+    color: #fff;
+    font-size: 1.25rem;
+    text-align: center;
+  }
+  .detail-dl dt {
+    font-weight: 600;
+  }
+  .btn-group {
+    display: flex;
+    gap: .5rem;
+  }
+</style>
 
-<h4>Tem a certeza que deseja eliminar o imóvel <strong>@Model.Designacao</strong>?</h4>
+<div class="card form-card">
+  <div class="card-header">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    Eliminar Imóvel Arrendado
+  </div>
+  <div class="card-body">
+    <p class="mb-4">
+      Tem a certeza que deseja eliminar o imóvel 
+      <strong>@Model.Designacao</strong>?
+    </p>
+    <dl class="row detail-dl">
+      <dt class="col-sm-4">Localização:</dt>
+      <dd class="col-sm-8">@Model.Localizacao</dd>
 
-<dl class="row">
-    <dt class="col-sm-4">Localização</dt>
-    <dd class="col-sm-8">@Model.Localizacao</dd>
+      <dt class="col-sm-4">Valor do Imóvel:</dt>
+      <dd class="col-sm-8">@Model.Valorimovel.ToString("C")</dd>
 
-    <dt class="col-sm-4">Valor do Imóvel</dt>
-    <dd class="col-sm-8">@Model.Valorimovel.ToString("C")</dd>
-
-    <dt class="col-sm-4">Valor da Renda</dt>
-    <dd class="col-sm-8">@Model.Valorrenda.ToString("C")</dd>
-</dl>
-
-<form asp-action="DeleteImovel" method="post">
-    <input type="hidden" asp-for="ImovelarrendadoId" />
-    <button type="submit" class="btn btn-danger">Eliminar</button>
-    <a asp-action="AtivosCatalogo" class="btn btn-secondary">Cancelar</a>
-</form>
+      <dt class="col-sm-4">Valor da Renda:</dt>
+      <dd class="col-sm-8">@Model.Valorrenda.ToString("C")</dd>
+    </dl>
+    <form asp-action="DeleteImovel" method="post" class="mt-4">
+      <input type="hidden" asp-for="ImovelarrendadoId" />
+      <div class="btn-group">
+        <button type="submit" class="btn btn-danger flex-fill">
+          <i class="fas fa-trash-alt me-1"></i> Eliminar
+        </button>
+        <a asp-action="AtivosCatalogo" class="btn btn-outline-secondary flex-fill">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>

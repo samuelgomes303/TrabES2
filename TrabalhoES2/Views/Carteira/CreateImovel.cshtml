@@ -3,56 +3,82 @@
     ViewData["Title"] = "Adicionar Imóvel Arrendado";
 }
 
-<h2>@ViewData["Title"]</h2>
+@* — estilos isolados para esta view *@
+<style>
+  .form-card {
+    max-width: 600px;
+    margin: 2rem auto;
+    border-radius: 1rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,.1);
+    overflow: hidden;
+  }
+  .form-card .card-header {
+    background: linear-gradient(135deg, #17a2b8, #117a8b);
+    color: #fff;
+    font-size: 1.25rem;
+    text-align: center;
+  }
+  .form-card .form-floating > .form-control,
+  .form-card .form-select {
+    border-radius: .5rem;
+  }
+</style>
 
-<form asp-action="CreateImovel" method="post">
-    <div class="form-group">
+<div class="card form-card">
+  <div class="card-header">@ViewData["Title"]</div>
+  <div class="card-body">
+    <form asp-action="CreateImovel" method="post" novalidate>
+      <div class="form-floating mb-3">
+        <input asp-for="Imovel.Designacao" class="form-control" placeholder="Designação" />
         <label asp-for="Imovel.Designacao">Designação</label>
-        <input asp-for="Imovel.Designacao" class="form-control" />
-    </div>
+      </div>
 
-    <div class="form-group">
+      <div class="form-floating mb-3">
+        <input asp-for="Imovel.Localizacao" class="form-control" placeholder="Localização" />
         <label asp-for="Imovel.Localizacao">Localização</label>
-        <input asp-for="Imovel.Localizacao" class="form-control" />
-    </div>
+      </div>
 
-    <div class="form-group">
-        <label asp-for="Imovel.BancoId">Banco</label>
-        <select asp-for="Imovel.BancoId" class="form-control" asp-items="@(new SelectList(ViewBag.Bancos, "BancoId", "Nome"))">
-            <option value="">Selecione um banco</option>
+      <div class="form-floating mb-3">
+        <select asp-for="Imovel.BancoId" class="form-select" asp-items="@(new SelectList(ViewBag.Bancos, "BancoId", "Nome"))" placeholder="Banco">
+          <option value="">Selecione um banco</option>
         </select>
-    </div>
+        <label asp-for="Imovel.BancoId">Banco</label>
+      </div>
 
-    <div class="form-group">
-        <label asp-for="Imovel.Valorimovel">Valor do Imóvel</label>
-        <input asp-for="Imovel.Valorimovel" class="form-control" />
-    </div>
+      <div class="form-floating mb-3">
+        <input asp-for="Imovel.Valorimovel" class="form-control" placeholder="Valor do Imóvel (€)" />
+        <label asp-for="Imovel.Valorimovel">Valor do Imóvel (€)</label>
+      </div>
 
-    <div class="form-group">
-        <label asp-for="Imovel.Valorrenda">Valor da Renda</label>
-        <input asp-for="Imovel.Valorrenda" class="form-control" />
-    </div>
+      <div class="form-floating mb-3">
+        <input asp-for="Imovel.Valorrenda" class="form-control" placeholder="Valor da Renda (€)" />
+        <label asp-for="Imovel.Valorrenda">Valor da Renda (€)</label>
+      </div>
 
-    <div class="form-group">
-        <label asp-for="Imovel.Valormensalcondo">Condomínio Mensal</label>
-        <input asp-for="Imovel.Valormensalcondo" class="form-control" />
-    </div>
+      <div class="form-floating mb-3">
+        <input asp-for="Imovel.Valormensalcondo" class="form-control" placeholder="Condomínio Mensal (€)" />
+        <label asp-for="Imovel.Valormensalcondo">Condomínio Mensal (€)</label>
+      </div>
 
-    <div class="form-group">
-        <label asp-for="Imovel.Valoranualdespesas">Despesas Anuais</label>
-        <input asp-for="Imovel.Valoranualdespesas" class="form-control" />
-    </div>
+      <div class="form-floating mb-3">
+        <input asp-for="Imovel.Valoranualdespesas" class="form-control" placeholder="Despesas Anuais (€)" />
+        <label asp-for="Imovel.Valoranualdespesas">Despesas Anuais (€)</label>
+      </div>
 
-    <div class="form-group">
+      <div class="form-floating mb-3">
+        <input asp-for="Ativo.Duracaomeses" class="form-control" placeholder="Duração (meses)" />
         <label asp-for="Ativo.Duracaomeses">Duração (meses)</label>
-        <input asp-for="Ativo.Duracaomeses" class="form-control" />
-    </div>
+      </div>
 
-    <div class="form-group">
+      <div class="form-floating mb-4">
+        <input asp-for="Ativo.Percimposto" class="form-control" placeholder="Imposto (%)" type="number" min="0" max="100" step="1" />
         <label asp-for="Ativo.Percimposto">Imposto (%)</label>
-        <input asp-for="Ativo.Percimposto" class="form-control" type="number" min="0" max="100" step="1" />
-    </div>
+      </div>
 
-    <button type="submit" class="btn btn-success">Criar</button>
-    <a asp-action="AtivosCatalogo" class="btn btn-secondary">Cancelar</a>
-</form>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success flex-fill">Criar</button>
+        <a asp-action="AtivosCatalogo" class="btn btn-outline-secondary flex-fill">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>

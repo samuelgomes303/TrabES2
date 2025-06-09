@@ -3,251 +3,267 @@
 @model TrabalhoES2.Models.Carteira
 
 @{
-ViewData["Title"] = "Minha Carteira";
+    ViewData["Title"] = "Minha Carteira";
+    var iniciais = Model.Ativofinanceiros;
 }
 
-<h1>@ViewData["Title"]</h1>
+@* — estilos isolados para a view Minha Carteira *@
+<style>
+  .page-header {
+    margin-bottom: 2rem;
+    color: #0069d9;
+    text-shadow: 1px 1px 2px rgba(0,0,0,.1);
+  }
+  .actions, .report-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-bottom: 1.5rem;
+  }
+  .filter-card, .table-card {
+    border-radius: 1rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,.05);
+    margin-bottom: 2rem;
+  }
+  .filter-card .card-header, .report-card .card-header {
+    background: linear-gradient(135deg, #17a2b8, #117a8b);
+    color: #fff;
+    font-weight: 600;
+  }
+  .filter-card .form-control,
+  .report-card .form-control {
+    border-radius: .5rem;
+  }
+  .table-card .card-header {
+    background: linear-gradient(135deg, #0052D4, #4364F7);
+    color: #fff;
+  }
+  .table-card .table thead th {
+    border-bottom: 2px solid #dee2e6;
+  }
+  .table-card .table-hover tbody tr:hover {
+    background: rgba(0,82,212,.05);
+  }
+  .badge-type {
+    font-size: .85rem;
+    text-transform: uppercase;
+  }
+</style>
+
+<h1 class="page-header">@ViewData["Title"]</h1>
 
 @if (TempData["Mensagem"] != null)
 {
-<div class="alert alert-info">@TempData["Mensagem"]</div>
+  <div class="alert alert-info">
+    @TempData["Mensagem"]
+  </div>
 }
 
-<div class="mb-4">
-    <a asp-action="SelecionarRelatorio" asp-controller="Carteira" asp-route-id="@Model.CarteiraId" class="btn btn-info">
-        Gerar Relatório2
-    </a>
+<div class="actions">
+  <a asp-action="SelecionarRelatorio" asp-controller="Carteira" asp-route-id="@Model.CarteiraId" class="btn btn-info">
+    <i class="fas fa-file-alt me-1"></i> Gerar Relatório
+  </a>
+  <a asp-action="AtivosCatalogo" class="btn btn-primary">
+    <i class="fas fa-th-list me-1"></i> Ver Ativos Disponíveis
+  </a>
 </div>
 
-<div class="mb-4">
-    <a asp-action="AtivosCatalogo" class="btn btn-primary">Ver Ativos Disponíveis</a>
+@* Relatório rápido *@
+<div class="card report-card mb-4">
+  <div class="card-header">Gerar Relatório por Período</div>
+  <div class="card-body">
+    <form asp-action="GerarRelatorio" asp-controller="Carteira" method="get" class="row g-3">
+      <input type="hidden" name="id" value="@Model.CarteiraId" />
+      <div class="col-md-4">
+        <label for="dataInicio" class="form-label">Data Início</label>
+        <input type="date" id="dataInicio" name="dataInicio" class="form-control" required />
+      </div>
+      <div class="col-md-4">
+        <label for="dataFim" class="form-label">Data Fim</label>
+        <input type="date" id="dataFim" name="dataFim" class="form-control" required />
+      </div>
+      <div class="col-md-4 d-flex align-items-end">
+        <button type="submit" class="btn btn-success w-100">
+          <i class="fas fa-chart-line me-1"></i> Gerar Relatório
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
-<!-- Formulário de relatório -->
-<form asp-action="GerarRelatorio" asp-controller="Carteira" method="get" class="mb-4">
-    <input type="hidden" name="id" value="@Model.CarteiraId" />
-    <div class="form-group row">
-        <div class="col-md-3">
-            <label for="dataInicio">Data Início</label>
-            <input type="date" class="form-control" id="dataInicio" name="dataInicio" required />
-        </div>
-        <div class="col-md-3">
-            <label for="dataFim">Data Fim</label>
-            <input type="date" class="form-control" id="dataFim" name="dataFim" required />
-        </div>
-        <div class="col-md-3 align-self-end">
-            <button type="submit" class="btn btn-primary mt-2">Gerar Relatório</button>
-        </div>
-    </div>
-</form>
-
-@if (Model.Ativofinanceiros.Count == 0)
+@if (!iniciais.Any())
 {
-<div class="alert alert-info">
-    Você ainda não tem ativos na sua carteira. Clique em "Ver Ativos Disponíveis" para adicionar.
-</div>
+  <div class="alert alert-warning">
+    Ainda não tens ativos na carteira. <a asp-action="AtivosCatalogo">Adiciona alguns!</a>
+  </div>
 }
 else
 {
-<!-- Filtros -->
-<form asp-action="Index" method="get" class="mb-4">
-    <div class="form-row row">
-        <div class="col-md-4 mb-2">
-            <select name="bancoId" class="form-control">
-                <option value="">Todos os Bancos</option>
-                @foreach (var banco in (List<TrabalhoES2.Models.Banco>)ViewBag.Bancos)
-                {
-                <option value="@banco.BancoId" selected="@(ViewData["bancoId"]?.ToString() == banco.BancoId.ToString() ? "selected" : null)">
-                    @banco.Nome
-                </option>
-                }
-            </select>
-        </div>
-        <div class="col-md-3 mb-2">
-            @{
-            var tipoSel = ViewData["tipo"] as string;
-            }
-            <select name="tipo" class="form-control">
-                <option value="">Todos os tipos</option>
-
-                @if (tipoSel == "DepositoPrazo")
-                {
-                <option value="DepositoPrazo" selected>Depósito a Prazo</option>
-                }
-                else
-                {
-                <option value="DepositoPrazo">Depósito a Prazo</option>
-                }
-
-                @if (tipoSel == "FundoInvestimento")
-                {
-                <option value="FundoInvestimento" selected>Fundo de Investimento</option>
-                }
-                else
-                {
-                <option value="FundoInvestimento">Fundo de Investimento</option>
-                }
-
-                @if (tipoSel == "ImovelArrendado")
-                {
-                <option value="ImovelArrendado" selected>Imóvel Arrendado</option>
-                }
-                else
-                {
-                <option value="ImovelArrendado">Imóvel Arrendado</option>
-                }
-            </select>
-
-
-        </div>
-        <div class="col-md-3 mb-2">
-            <input type="number" step="0.01" name="montanteAplicado" class="form-control" placeholder="Montante aplicado mínimo" value="@(ViewData["montanteAplicado"] ?? "")" />
-        </div>
-        <div class="col-md-2 mb-2">
-            <button type="submit" class="btn btn-primary btn-block">Filtrar</button>
-            <a asp-action="Index" class="btn btn-secondary btn-block mt-1">Limpar</a>
-        </div>
-    </div>
-</form>
-
-@if (ViewBag.NoResults != null)
-{
-<div class="alert alert-warning">@ViewBag.NoResults</div>
-}
-
-<!-- Tabela de ativos -->
-<div class="card mb-4">
-    <div class="card-header"><h3>Seus Ativos</h3></div>
+  @* Filtros de pesquisa server-side *@
+  <div class="card filter-card mb-4">
+    <div class="card-header">Filtrar Ativos</div>
     <div class="card-body">
-        <table class="table table-striped">
-            <thead>
+      <form asp-action="Index" method="get" class="row g-3 align-items-end">
+        <input type="hidden" name="id" value="@Model.CarteiraId" />
+        <div class="col-md-4">
+          <label class="form-label">Designação</label>
+          <input id="designacaoInput" name="designacao"
+                 value="@(ViewData["designacao"] as string ?? "")"
+                 type="text" class="form-control" placeholder="Pesquisar..." />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Tipo</label>
+          <select name="tipo" class="form-select">
+            <option value="">Todos</option>
+            @if ((ViewData["tipo"] as string) == "DepositoPrazo")
+            {
+                <option value="DepositoPrazo" selected>
+                  Depósito a Prazo
+                </option>
+            }
+            else
+            {
+                <option value="DepositoPrazo">
+                  Depósito a Prazo
+                </option>
+            }
+            @if((ViewData["tipo"] as string) == "FundoInvestimento")
+            {
+                <option value="FundoInvestimento" selected>Fundo de Investimento</option>
+            }
+            else
+            {
+                <option value="FundoInvestimento">Fundo de Investimento</option>
+            }
+            @if((ViewData["tipo"] as string) == "ImovelArrendado")
+            {
+              <option value="ImovelArrendado" selected>
+                Imóvel Arrendado
+              </option>
+            }
+            else
+            {
+              <option value="ImovelArrendado">
+                Imóvel Arrendado
+              </option>
+            }
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Montante ≥</label>
+          <input name="montanteAplicado" type="number" step="0.01"
+                 value="@(ViewData["montanteAplicado"] ?? "")"
+                 class="form-control" placeholder="€ mínimo" />
+        </div>
+        <div class="col-md-2 d-grid">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-filter me-1"></i> Filtrar
+          </button>
+          <a asp-action="Index" asp-route-id="@Model.CarteiraId" class="btn btn-outline-secondary mt-1">
+            Limpar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  @* Tabela de ativos *@
+  <div class="card table-card">
+    <div class="card-header"><h5 class="mb-0">Seus Ativos</h5></div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0">
+          <thead class="bg-light">
             <tr>
-                <th>Designação</th>
-                <th>Tipo</th>
-                <th>Duração (meses)</th>
-                <th>Data de Início</th>
-                <th>Detalhes</th>
-                <th>Valor Inicial</th>
-                <th>Valor Atual</th>
-                <th>Expectativa de Rendimento</th>
-                <th>Ações</th>
+              <th>Designação</th>
+              <th>Tipo</th>
+              <th>Duração</th>
+              <th>Início</th>
+              <th>Valor Inicial</th>
+              <th>Valor Atual</th>
+              <th>Expectativa</th>
+              <th>Ações</th>
             </tr>
-            </thead>
-            <tbody>
+          </thead>
+          <tbody id="ativosTableBody">
             @foreach (var ativo in Model.Ativofinanceiros)
             {
-            var fundo = ativo.Fundoinvestimento;
-            var valorAtualComJuros = fundo != null ? FundoInvestimentoService.CalcularValorAtualComJuros(fundo, ativo) : 0m;
-
-            <tr>
+              var fundo = ativo.Fundoinvestimento;
+              var atual = fundo != null
+                  ? FundoInvestimentoService.CalcularValorAtualComJuros(fundo, ativo)
+                  : ativo.Depositoprazo?.Valoratual
+                    ?? ImovelService.CalcularValorAtualComRendimentos(ativo.Imovelarrendado, ativo);
+              <tr>
                 <td>
-                    @(ativo.Depositoprazo?.Titular ?? fundo?.Nome ?? ativo.Imovelarrendado?.Designacao ?? "Sem designação")
+                  @(ativo.Depositoprazo?.Titular
+                    ?? fundo?.Nome
+                    ?? ativo.Imovelarrendado?.Designacao
+                    ?? "—")
                 </td>
                 <td>
-                    @(ativo.Depositoprazo != null ? "Depósito a Prazo" :
-                    fundo != null ? "Fundo de Investimento" :
-                    ativo.Imovelarrendado != null ? "Imóvel Arrendado" : "Desconhecido")
+                  <span class="badge bg-secondary badge-type">
+                    @(ativo.Depositoprazo != null ? "Prazo"
+                      : fundo != null ? "Fundo" : "Imóvel")
+                  </span>
                 </td>
-                <td>@ativo.Duracaomeses meses</td>
+                <td>@ativo.Duracaomeses mês@(ativo.Duracaomeses > 1 ? "es" : "")</td>
                 <td>@ativo.Datainicio?.ToString("dd/MM/yyyy")</td>
                 <td>
-                    @if (ativo.Depositoprazo != null)
-                    {
-                    <span>Taxa: @ativo.Depositoprazo.Taxajuroanual%<br />Banco: @ativo.Depositoprazo.Banco?.Nome</span>
+                  @(((ativo.Depositoprazo?.Valorinicial
+                     ?? fundo?.Montanteinvestido
+                     ?? ativo.Imovelarrendado?.Valorimovel) ?? 0m).ToString("C"))
+                </td>
+                <td>@atual.ToString("C")</td>
+                <td>
+                  @{
+                    decimal exp = 0;
+                    string per = "";
+                    if (ativo.Depositoprazo != null) {
+                      var taxa = ativo.Depositoprazo.Taxajuroanual/100m;
+                      var meses = ativo.Duracaomeses ?? 0;
+                      exp = ativo.Depositoprazo.Valorinicial*taxa*meses/12m*(1-0.28m);
+                      per = meses>=12 ? $"{meses/12} ano(s)" : $"{meses} mês(es)";
+                    } else if (fundo!=null) {
+                      var taxa = fundo.Taxajuropdefeito/100m;
+                      var anos = Math.Ceiling((double)(ativo.Duracaomeses??0)/12);
+                      exp = atual*(decimal)Math.Pow((double)(1+taxa),(int)anos)-atual;
+                      per = $"{(int)anos} ano(s)";
+                    } else {
+                      exp = ImovelService.CalcularExpectativaRendimentoAnual(ativo.Imovelarrendado, ativo);
+                      per = "ano";
                     }
-                    else if (fundo != null)
-                    {
-                    <span>@fundo.Nome<br />Banco: @fundo.Banco?.Nome</span>
-                    }
-                    else if (ativo.Imovelarrendado != null)
-                    {
-                    <span>@ativo.Imovelarrendado.Designacao<br />Banco: @ativo.Imovelarrendado.Banco?.Nome</span>
-                    }
+                  }
+                  <span class="@(exp>=0 ? "text-success" : "text-danger")">
+                    @(exp>=0 ? "+" : "")@exp.ToString("C") <small>@per</small>
+                  </span>
                 </td>
                 <td>
-                    @if (ativo.Depositoprazo != null)
-                    {
-                    @ativo.Depositoprazo.Valorinicial.ToString("C")
-                    }
-                    else if (fundo != null)
-                    {
-                    @fundo.Montanteinvestido.ToString("C")
-                    }
-                    else if (ativo.Imovelarrendado != null)
-                    {
-                    @ativo.Imovelarrendado.Valorimovel.ToString("C")
-                    }
+                  <a asp-action="Remover" asp-route-id="@ativo.AtivofinanceiroId"
+                     class="btn btn-sm btn-danger">
+                    <i class="fas fa-trash-alt"></i>
+                  </a>
                 </td>
-                <td>
-                    @if (fundo != null)
-                    {
-                    <div>
-                        @valorAtualComJuros.ToString("C")
-                        @if (fundo.Quantidade > 0)
-                        {
-                        var porUnidade = valorAtualComJuros / fundo.Quantidade;
-                        <br /><small class="text-muted">(@porUnidade.ToString("C") por unidade)</small>
-                        }
-                    </div>
-                    }
-                    else if (ativo.Depositoprazo != null)
-                    {
-                    @ativo.Depositoprazo.Valoratual.ToString("C")
-                    }
-                    else if (ativo.Imovelarrendado != null)
-                    {
-                        @ImovelService.CalcularValorAtualComRendimentos(ativo.Imovelarrendado, ativo).ToString("C")
-                    }
-                </td>
-                <td>
-                    @{
-                    decimal expectativa = 0;
-                    string periodo = "";
-
-                    if (ativo.Depositoprazo != null)
-                    {
-                        var taxa = ativo.Depositoprazo.Taxajuroanual / 100m;
-                        var meses = ativo.Duracaomeses ?? 0;
-                        var imposto = 0.28m;
-                        expectativa = ativo.Depositoprazo.Valorinicial * taxa * meses / 12m * (1 - imposto);
-                        periodo = $"em {meses / 12m:F1} {(meses == 12 ? "ano" : "anos")}";
-
-                    }
-                    else if (fundo != null)
-                    {
-                    var taxa = fundo.Taxajuropdefeito / 100m;
-                    var anos = (int)Math.Ceiling((ativo.Duracaomeses ?? 0) / 12.0);
-                    expectativa = valorAtualComJuros * (decimal)Math.Pow((double)(1 + taxa), anos) - valorAtualComJuros;
-                    periodo = $"em {anos} {(anos == 1 ? "ano" : "anos")}";
-                    }
-                    else if (ativo.Imovelarrendado != null)
-                    {
-                        expectativa = ImovelService.CalcularExpectativaRendimentoAnual(ativo.Imovelarrendado, ativo);
-                        periodo = "por ano";
-
-                    }
-                    }
-
-                    @if (expectativa > 0)
-                    {
-                    <span class="text-success">+@expectativa.ToString("C") @periodo</span>
-                    }
-                    else if (expectativa < 0)
-                    {
-                    <span class="text-danger">@expectativa.ToString("C") @periodo</span>
-                    }
-                    else
-                    {
-                    <span>Sem rendimento</span>
-                    }
-                </td>
-                <td>
-                    <a asp-action="Remover" asp-route-id="@ativo.AtivofinanceiroId" class="btn btn-danger btn-sm">Remover</a>
-                </td>
-            </tr>
+              </tr>
             }
-            </tbody>
+          </tbody>
         </table>
+      </div>
     </div>
-</div>
+  </div>
+}
+
+@section Scripts {
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){
+      const input = document.getElementById('designacaoInput');
+      const rows = document.querySelectorAll('#ativosTableBody tr');
+      input.addEventListener('input', () => {
+        const term = input.value.trim().toLowerCase();
+        rows.forEach(tr => {
+          const txt = tr.cells[0].textContent.toLowerCase();
+          tr.style.display = txt.includes(term) ? '' : 'none';
+        });
+      });
+    });
+  </script>
 }

@@ -1,71 +1,135 @@
-﻿
-@model IEnumerable<TrabalhoES2.Models.Ativofinanceiro>
-
+﻿@model IEnumerable<TrabalhoES2.Models.Ativofinanceiro>
 @{
-ViewData["Title"] = "Ativos Disponíveis";
+    ViewData["Title"] = "Ativos Disponíveis";
 }
+
+@* — estilos locais para esta view *@
+<style>
+  /* Header */
+  h1 {
+    margin-bottom: 1.5rem;
+    color: #0052D4;
+    text-shadow: 1px 1px 2px rgba(0,0,0,.1);
+  }
+
+  /* Alertas */
+  .alert {
+    border-radius: .5rem;
+  }
+
+  /* Botões de ação */
+  .actions {
+    margin-bottom: 1.5rem;
+  }
+  .actions .btn {
+    flex: 1 1 auto;
+  }
+
+  /* Filtro de tipo */
+  #filtro-tipo {
+    max-width: 220px;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Títulos de secção */
+  .section-title {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+</style>
 
 <h1>@ViewData["Title"]</h1>
 
 @if (ViewBag.TpUtilizador == "Admin")
 {
-<div class="alert alert-success">
-    Bem-vindo, administrador! Tens permissões especiais nesta página.
-</div>
+    <div class="alert alert-success">
+        Bem-vindo, administrador! Tens permissões especiais nesta página.
+    </div>
 }
 else if (ViewBag.TpUtilizador == "UserManager")
 {
-<div class="alert alert-warning">
-    Acesso de gestor. Algumas funcionalidades estão disponíveis.
-</div>
+    <div class="alert alert-warning">
+        Acesso de gestor. Algumas funcionalidades estão disponíveis.
+    </div>
 }
 else
 {
-<div class="alert alert-info">
-    Bem-vindo! Estás com um perfil de cliente.
-</div>
+    <div class="alert alert-info">
+        Bem-vindo! Estás com um perfil de cliente.
+    </div>
 }
 
-<div class="mb-4 d-flex gap-2 flex-wrap">
+<div class="d-flex flex-wrap gap-2 actions">
     @if (!User.IsInRole("Admin"))
     {
-    <a asp-action="Index" class="btn btn-secondary">Voltar para Minha Carteira</a>
+        <a asp-action="Index" class="btn btn-outline-secondary">← Minha Carteira</a>
     }
     <a asp-action="Create" class="btn btn-success">+ Novo Depósito a Prazo</a>
     <a asp-action="CreateImovel" class="btn btn-info">+ Novo Imóvel Arrendado</a>
     @if (ViewBag.TpUtilizador == "Admin")
     {
-    <a asp-action="CreateFundo" class="btn btn-primary">+ Novo Fundo de Investimento</a>
+        <a asp-action="CreateFundo" class="btn btn-primary">+ Novo Fundo de Investimento</a>
     }
 </div>
 
+@* Dropdown de filtro por tipo *@
+<div class="mb-4">
+    <label for="filtro-tipo" class="form-label">Filtrar por tipo de ativo:</label>
+    <select id="filtro-tipo" class="form-select">
+        <option value="">— Todos os ativos —</option>
+        <option value="depósito">Depósitos a Prazo</option>
+        <option value="fundo">Fundos de Investimento</option>
+        <option value="imóvel">Imóveis Arrendados</option>
+    </select>
+</div>
+
 <hr />
-<h3 class="text-primary">Seus Ativos</h3>
-<div class="row">
+
+<h3 class="section-title text-primary">Seus Ativos</h3>
+<div class="row" id="catalogo">
     @foreach (var ativo in Model.Where(a => a.Carteira?.UtilizadorId == ViewBag.UserId))
     {
-    <div class="col-md-4 mb-4">
-        @Html.Partial("_CardAtivo", ativo)
-    </div>
+        <div class="col-md-4 mb-4">
+            @Html.Partial("_CardAtivo", ativo)
+        </div>
     }
 </div>
 
 @if (ViewBag.TpUtilizador != "Admin")
 {
-<hr />
-<h3 class="text-success">Fundos do Administrador</h3>
-<div class="alert alert-info">
-    Estes fundos foram criados por administradores. Podes adicioná-los à tua carteira.
-</div>
-<div class="row">
-    @foreach (var fundo in Model.Where(a =>
-    a.Fundoinvestimento != null &&
-    a.Carteira?.Utilizador?.TpUtilizador == TrabalhoES2.Models.Utilizador.TipoUtilizador.Admin &&
-    a.Carteira?.UtilizadorId != ViewBag.UserId))
-    {
-    <div class="col-md-4 mb-4">
-        @Html.Partial("_CardAtivo", fundo)
+    <hr />
+    <h3 class="section-title text-success">Fundos do Administrador</h3>
+    <div class="alert alert-info">
+        Estes fundos foram criados por administradores. Podes adicioná-los à tua carteira.
     </div>
-    }
-</div>
+    <div class="row" id="catalogo-adm">
+        @foreach (var fundo in Model.Where(a =>
+            a.Fundoinvestimento != null &&
+            a.Carteira?.Utilizador?.TpUtilizador == TrabalhoES2.Models.Utilizador.TipoUtilizador.Admin &&
+            a.Carteira?.UtilizadorId != ViewBag.UserId))
+        {
+            <div class="col-md-4 mb-4">
+                @Html.Partial("_CardAtivo", fundo)
+            </div>
+        }
+    </div>
 }
+
+@* — script local para filtrar os cartões pelo atributo data-tipo — *@
+<script>
+  (function(){
+    var filtro = document.getElementById('filtro-tipo');
+    filtro.addEventListener('change', function(){
+      var tipo = this.value;
+      // combina ambas as secções
+      var cols = document.querySelectorAll('#catalogo .col-md-4, #catalogo-adm .col-md-4');
+      cols.forEach(function(col){
+        var card = col.querySelector('[data-tipo]');
+        // mostra se não houver filtro ou se corresponder ao tipo selecionado
+        col.style.display = (!tipo || card.getAttribute('data-tipo') === tipo)
+                            ? 'block'
+                            : 'none';
+      });
+    });
+  })();
+</script>

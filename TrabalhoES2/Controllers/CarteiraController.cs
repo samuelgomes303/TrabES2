@@ -25,103 +25,109 @@ namespace TrabalhoES2.Controllers
         }
 
 // GET: Carteira
-public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? montanteAplicado)
+// Antes: public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? montanteAplicado)
+public async Task<IActionResult> Index(
+    string designacao,
+    string tipo,
+    decimal? montanteAplicado)
 {
     var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-    // (mesma lógica de criação/verificação de utilizador e carteira...)
-    var utilizador = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-    if (utilizador == null)
-        return NotFound("Utilizador não encontrado.");
-
+    // Carregar carteira + utilizador + ativos + cada tipo + banco
     var carteira = await _context.Carteiras
+        .Include(c => c.Utilizador)
         .Include(c => c.Ativofinanceiros)
+            .ThenInclude(a => a.Depositoprazo)
+                .ThenInclude(d => d.Banco)
+        .Include(c => c.Ativofinanceiros)
+            .ThenInclude(a => a.Fundoinvestimento)
+                .ThenInclude(f => f.Banco)
+        .Include(c => c.Ativofinanceiros)
+            .ThenInclude(a => a.Imovelarrendado)
+                .ThenInclude(i => i.Banco)
         .FirstOrDefaultAsync(c => c.UtilizadorId == userId);
 
     if (carteira == null)
     {
-        carteira = new Carteira { Nome = "Carteira Principal", UtilizadorId = userId };
+        carteira = new Carteira
+        {
+            Nome = "Carteira Principal",
+            UtilizadorId = userId,
+            Ativofinanceiros = new List<Ativofinanceiro>()
+        };
         _context.Carteiras.Add(carteira);
         await _context.SaveChangesAsync();
         return View(carteira);
     }
 
-    // Carrega TODOS os ativos (relacionados) para, em caso de filtro sem correspondência, manter a lista inteira
-    var todosAtivos = await _context.Ativofinanceiros
-        .Where(a => a.CarteiraId == carteira.CarteiraId)
-        .Include(a => a.Depositoprazo).ThenInclude(d => d.Banco)
-        .Include(a => a.Fundoinvestimento).ThenInclude(f => f.Banco)
-        .Include(a => a.Imovelarrendado).ThenInclude(i => i.Banco)
-        .ToListAsync();
+    // Garante lista sempre inicializada
+    var todosAtivos = carteira.Ativofinanceiros ?? new List<Ativofinanceiro>();
 
-    // Carrega também os bancos para a dropdown
-    ViewBag.Bancos = await _context.Bancos
-        .OrderBy(b => b.Nome)
-        .ToListAsync();
+    // 1) Lista de designações para dropdown
+    ViewBag.Designacoes = todosAtivos
+        .Select(a => a.Depositoprazo?.Titular
+                  ?? a.Fundoinvestimento?.Nome
+                  ?? a.Imovelarrendado?.Designacao)
+        .Where(d => !string.IsNullOrEmpty(d))
+        .Distinct()
+        .OrderBy(d => d)
+        .ToList();
 
-    // Constrói a query para FILTROS
+    // 2) Monta query em memória (já está tudo carregado)
     var ativosQuery = todosAtivos.AsQueryable();
 
-    // 1) Filtrar por banco selecionado
-    if (bancoId.HasValue)
+    // 3) Filtrar por designação
+    if (!string.IsNullOrEmpty(designacao))
     {
         ativosQuery = ativosQuery.Where(a =>
-            (a.Depositoprazo != null && a.Depositoprazo.BancoId == bancoId.Value) ||
-            (a.Fundoinvestimento != null && a.Fundoinvestimento.BancoId == bancoId.Value) ||
-            (a.Imovelarrendado != null && a.Imovelarrendado.BancoId == bancoId.Value)
+            (a.Depositoprazo     != null && a.Depositoprazo.Titular     == designacao) ||
+            (a.Fundoinvestimento != null && a.Fundoinvestimento.Nome    == designacao) ||
+            (a.Imovelarrendado   != null && a.Imovelarrendado.Designacao == designacao)
         );
     }
 
-    // Filtrar por tipo
+    // 4) Filtrar por tipo
     if (!string.IsNullOrEmpty(tipo))
     {
-        switch (tipo)
+        ativosQuery = tipo switch
         {
-            case "DepositoPrazo":
-                ativosQuery = ativosQuery.Where(a => a.Depositoprazo != null);
-                break;
-            case "FundoInvestimento":
-                ativosQuery = ativosQuery.Where(a => a.Fundoinvestimento != null);
-                break;
-            case "ImovelArrendado":
-                ativosQuery = ativosQuery.Where(a => a.Imovelarrendado != null);
-                break;
-        }
+            "DepositoPrazo"     => ativosQuery.Where(a => a.Depositoprazo     != null),
+            "FundoInvestimento" => ativosQuery.Where(a => a.Fundoinvestimento != null),
+            "ImovelArrendado"   => ativosQuery.Where(a => a.Imovelarrendado   != null),
+            _                   => ativosQuery
+        };
     }
 
-    // Filtrar por montante aplicado (depósito.VALORINICIAL e fundo.MONTANTEINVESTIDO)
+    // 5) Filtrar por montante mínimo
     if (montanteAplicado.HasValue)
     {
+        var min = montanteAplicado.Value;
         ativosQuery = ativosQuery.Where(a =>
-            (a.Depositoprazo != null && a.Depositoprazo.Valorinicial >= montanteAplicado.Value) ||
-            (a.Fundoinvestimento != null && a.Fundoinvestimento.Montanteinvestido >= montanteAplicado.Value) ||
-            (a.Imovelarrendado != null && a.Imovelarrendado.Valorimovel >= montanteAplicado.Value)
+            (a.Depositoprazo     != null && a.Depositoprazo.Valorinicial      >= min) ||
+            (a.Fundoinvestimento != null && a.Fundoinvestimento.Montanteinvestido>= min) ||
+            (a.Imovelarrendado   != null && a.Imovelarrendado.Valorimovel      >= min)
         );
     }
 
-    // 4) Só ativos ainda vigentes (DataInício + Duração >= hoje)
+    // 6) Vigência e ordenação
     var hoje = DateOnly.FromDateTime(DateTime.Now);
-    ativosQuery = ativosQuery.Where(a =>
-        a.Datainicio.HasValue &&
-        a.Duracaomeses.HasValue &&
-        a.Datainicio.Value.AddMonths(a.Duracaomeses.Value) >= hoje
-    );
+    ativosQuery = ativosQuery
+        .Where(a =>
+            a.Datainicio.HasValue &&
+            a.Duracaomeses.HasValue &&
+            a.Datainicio.Value.AddMonths(a.Duracaomeses.Value) >= hoje)
+        .OrderByDescending(a =>
+            a.Depositoprazo     != null ? (decimal?)a.Depositoprazo.Valorinicial :
+            a.Fundoinvestimento != null ? (decimal?)a.Fundoinvestimento.Montanteinvestido :
+            a.Imovelarrendado   != null ? (decimal?)a.Imovelarrendado.Valorimovel :
+                                           0m
+        );
 
-    // 5) Ordena descrescentemente pelo valor inicial aplicado
-    ativosQuery = ativosQuery.OrderByDescending(a =>
-        a.Depositoprazo != null       ? (decimal?)a.Depositoprazo.Valorinicial :
-        a.Fundoinvestimento != null   ? (decimal?)a.Fundoinvestimento.Montanteinvestido :
-        a.Imovelarrendado != null     ? (decimal?)a.Imovelarrendado.Valorimovel :
-                                        0m
-    );
-
-    // Lista filtrada
     var ativosFiltrados = ativosQuery.ToList();
-
-    // Se não houver correspondência, mostra mensagem e mantém lista completa
     if (!ativosFiltrados.Any())
     {
         ViewBag.NoResults = "Nenhum ativo corresponde aos filtros informados.";
+        // mantém todos se não houver resultados
         carteira.Ativofinanceiros = todosAtivos;
     }
     else
@@ -129,14 +135,15 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
         carteira.Ativofinanceiros = ativosFiltrados;
     }
 
-    // Passa valores para manter preenchidos na view
-    ViewBag.Bancos = await _context.Bancos.OrderBy(b => b.Nome).ToListAsync();
-    ViewData["bancoId"]        = bancoId?.ToString();
-    ViewData["tipo"]           = tipo;
+    // 7) Manter filtros na view
+    ViewData["designacao"]       = designacao;
+    ViewData["tipo"]             = tipo;
     ViewData["montanteAplicado"] = montanteAplicado?.ToString("F2");
 
     return View(carteira);
 }
+
+
 
 
 

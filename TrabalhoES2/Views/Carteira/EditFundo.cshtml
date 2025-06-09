@@ -1,42 +1,93 @@
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @model TrabalhoES2.Models.Fundoinvestimento
+
 @{
-ViewData["Title"] = "Editar Fundo de Investimento";
+    ViewData["Title"] = "Editar Fundo de Investimento";
+    var bancos = ViewBag.Bancos as List<TrabalhoES2.Models.Banco>;
 }
 
-<h2>@ViewData["Title"]</h2>
+@* — estilos isolados para esta view *@
+<style>
+  .form-card {
+    max-width: 600px;
+    margin: 2rem auto;
+    border-radius: 1rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,.1);
+    overflow: hidden;
+  }
+  .form-card .card-header {
+    background: linear-gradient(135deg, #28a745, #218838);
+    color: #fff;
+    font-size: 1.25rem;
+    text-align: center;
+  }
+  .form-floating > .form-control,
+  .form-floating > .form-select {
+    border-radius: .5rem;
+  }
+  .btn-group {
+    display: flex;
+    gap: .5rem;
+  }
+</style>
 
-<form asp-action="EditFundo" method="post">
-    <input type="hidden" asp-for="FundoinvestimentoId" />
-    <input type="hidden" asp-for="AtivofinanceiroId" />
+<div class="card form-card">
+  <div class="card-header">@ViewData["Title"]</div>
+  <div class="card-body">
+    <form asp-action="EditFundo" method="post" novalidate>
+      <input type="hidden" asp-for="FundoinvestimentoId" />
+      <input type="hidden" asp-for="AtivofinanceiroId" />
 
-    <div class="form-group">
+      <div class="form-floating mb-3">
+        <input asp-for="Nome"
+               class="form-control"
+               placeholder="Nome do Fundo" />
         <label asp-for="Nome">Nome do Fundo</label>
-        <input asp-for="Nome" class="form-control" />
-    </div>
+        <span asp-validation-for="Nome" class="text-danger small"></span>
+      </div>
 
-    <div class="form-group">
-        <label asp-for="BancoId">Banco</label>
-        <select asp-for="BancoId" class="form-control" asp-items="@(new SelectList(ViewBag.Bancos, "BancoId", "Nome"))">
-            <option value="">Selecione um banco</option>
+      <div class="form-floating mb-3">
+        <select asp-for="BancoId"
+                class="form-select"
+                asp-items="@(new SelectList(ViewBag.Bancos, "BancoId", "Nome"))"
+                placeholder="Banco">
+          <option value="">Selecione um banco</option>
         </select>
-    </div>
+        <label asp-for="BancoId">Banco</label>
+        <span asp-validation-for="BancoId" class="text-danger small"></span>
+      </div>
 
-    <div class="form-group">
-        <label asp-for="Montanteinvestido">Montante Investido</label>
-        <input asp-for="Montanteinvestido" class="form-control" />
-    </div>
+      <div class="form-floating mb-3">
+        <input asp-for="Montanteinvestido"
+               type="number" step="0.01"
+               class="form-control"
+               placeholder="Montante Investido" />
+        <label asp-for="Montanteinvestido">Montante Investido (€)</label>
+        <span asp-validation-for="Montanteinvestido" class="text-danger small"></span>
+      </div>
 
-    <div class="form-group">
+      <div class="form-floating mb-3">
+        <input asp-for="Taxajuropdefeito"
+               type="number" step="0.01"
+               class="form-control"
+               placeholder="Taxa de Juro (%)" />
         <label asp-for="Taxajuropdefeito">Taxa de Juro (%)</label>
-        <input asp-for="Taxajuropdefeito" class="form-control" />
-    </div>
+        <span asp-validation-for="Taxajuropdefeito" class="text-danger small"></span>
+      </div>
 
-    <div class="form-group">
-        <label for="DuracaoMeses">Duração (meses)</label>
-        <input type="number" name="DuracaoMeses" class="form-control" value="@ViewBag.Duracao" />
-    </div>
+      <div class="form-floating mb-4">
+        <input name="DuracaoMeses"
+               type="number"
+               value="@ViewBag.Duracao"
+               class="form-control"
+               placeholder="Duração (meses)" />
+        <label>Duração (meses)</label>
+      </div>
 
-    <button type="submit" class="btn btn-primary">Guardar</button>
-    <a asp-action="AtivosCatalogo" class="btn btn-secondary">Cancelar</a>
-</form>
+      <div class="btn-group">
+        <button type="submit" class="btn btn-success flex-fill">Guardar</button>
+        <a asp-action="AtivosCatalogo" class="btn btn-outline-secondary flex-fill">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>

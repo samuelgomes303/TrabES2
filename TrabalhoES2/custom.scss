@@ -1,0 +1,8 @@
+// custom.scss
+
+@use "bootstrap/scss/bootstrap" with (
+  $primary:          #2c3e50,
+  $secondary:        #18bc9c,
+  $body-bg:          #f5f7fa,
+  $font-family-base: ('Inter', sans-serif)
+);
