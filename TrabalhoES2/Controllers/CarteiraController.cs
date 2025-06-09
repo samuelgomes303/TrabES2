@@ -16,12 +16,14 @@ namespace TrabalhoES2.Controllers
         private readonly projetoPraticoDbContext _context;
         private readonly DepositoService _depositoService;
         private readonly FundoService _fundoService;
+        private readonly RelatorioBancoService _relatorioBancoService;
 
         public CarteiraController(projetoPraticoDbContext context)
         {
             _context = context;
             _depositoService = new DepositoService(_context); // Inicializa o serviço aqui
             _fundoService = new FundoService(_context);
+            _relatorioBancoService = new RelatorioBancoService(_context);
         }
 
 // GET: Carteira
@@ -362,15 +364,14 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
             await _depositoService.CriarDepositoAsync(deposito, ativo, userId);
             return RedirectToAction("AtivosCatalogo");
         }
-
-
-
+        
         [HttpGet]
         public async Task<IActionResult> Create()
         {
             ViewBag.Bancos = await _context.Bancos.ToListAsync();
             return View();
         }
+        
 
         // GET: Carteira/Edit/5
         [HttpGet]
@@ -902,19 +903,53 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
         }
         
         
-        public IActionResult SelecionarRelatorio(int id)
+        
+        // relatorio admin valor por banco
+        [Authorize(Roles = "Admin")]
+        [HttpGet, ActionName("GerarRelatorioBancos")]
+        public async Task<IActionResult> GerarRelatorioBancos(DateTime dataInicio, DateTime dataFim)
         {
-            var carteira = _context.Carteiras
-                .Include(c => c.Utilizador)
-                .FirstOrDefault(c => c.CarteiraId == id);
-
-            if (carteira == null)
+            // Apenas administradores devem poder aceder a este relatório
+            if (!User.IsInRole("Admin"))
             {
-                return NotFound();
+                return Forbid("Apenas administradores podem aceder a este relatório.");
+            }
+
+            if (dataFim <= dataInicio)
+            {
+                TempData["Erro"] = "A data final deve ser posterior à data inicial.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var relatorio = await _relatorioBancoService.GerarRelatorioPorBanco(dataInicio, dataFim);
+
+            ViewBag.TpUtilizador = "Admin";
+            ViewBag.RelatorioBanco = relatorio;
+            ViewBag.DataInicio = dataInicio;
+            ViewBag.DataFim = dataFim;
+
+            return View("RelatorioValPBanco");
+        }
+        
+        
+        
+        public IActionResult SelecionarRelatorio(int? id)
+        {
+            TrabalhoES2.Models.Carteira carteira = null;
+
+            if (id.HasValue)
+            {
+                carteira = _context.Carteiras
+                    .Include(c => c.Utilizador)
+                    .FirstOrDefault(c => c.CarteiraId == id.Value);
+
+                if (carteira == null)
+                    return NotFound();
             }
 
             return View("SelecionarRelatorio", carteira);
         }
+        
         
         public decimal CalcularValorAtualComJuros(Fundoinvestimento fundo, Ativofinanceiro ativo)
         {
