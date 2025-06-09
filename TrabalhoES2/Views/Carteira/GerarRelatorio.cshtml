@@ -3,6 +3,8 @@
 @{
     ViewData["Title"] = "Relatório da Carteira";
     var utilizador = Model.Utilizador;
+    var ativos = (List<dynamic>)ViewBag.AtivosRelatorio ?? new List<dynamic>();
+    var performanceMensal = ViewBag.PerformanceMensal as List<dynamic> ?? new List<dynamic>();
 }
 
 <h1>@ViewData["Title"]</h1>
@@ -12,10 +14,10 @@
 
 <hr />
 
-@if (ViewBag.AtivosRelatorio != null && ((List<dynamic>)ViewBag.AtivosRelatorio).Any())
+@if (ativos.Any())
 {
     <div class="row">
-        @foreach (var ativo in ViewBag.AtivosRelatorio)
+        @foreach (var ativo in ativos)
         {
             <div class="col-md-4 mb-4">
                 <div class="card h-100">
@@ -49,6 +51,84 @@ else
     <li class="list-group-item"><strong>Lucro Mensal Médio Bruto:</strong> @ViewBag.LucroMensalMedioBruto.ToString("C")</li>
     <li class="list-group-item"><strong>Lucro Mensal Médio Líquido:</strong> @ViewBag.LucroMensalMedioLiquido.ToString("C")</li>
 </ul>
+
+<hr />
+
+<h4>Performance Mensal dos Ativos</h4>
+<div class="mb-3">
+    <label for="tipoLucro" class="form-label">Tipo de Performance</label>
+    <select id="tipoLucro" class="form-select" style="width:auto;display:inline">
+        <option value="LucroBruto">Lucro Bruto</option>
+        <option value="LucroLiquido">Lucro Líquido</option>
+        <option value="Impostos">Impostos</option>
+    </select>
+</div>
+<canvas id="performanceChart" height="100"></canvas>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Dados vindos do ViewBag.PerformanceMensal (serializado em JSON)
+        const dataServer = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.PerformanceMensal ?? new List<dynamic>()));
+
+        // Extrai meses únicos (eixo X)
+        const meses = [...new Set(dataServer.map(x => x.Mes))];
+
+        // Extrai tipos de ativo únicos (linhas do gráfico)
+        const tiposAtivo = [...new Set(dataServer.map(x => x.TipoAtivo))];
+
+        // Função para datasets conforme a métrica
+        function getDatasets(metric) {
+            return tiposAtivo.map((tipo, idx) => ({
+                label: tipo,
+                data: meses.map(mes => {
+                    const item = dataServer.find(x => x.Mes === mes && x.TipoAtivo === tipo);
+                    return item ? item[metric] : 0;
+                }),
+                fill: false,
+                tension: 0.2,
+                borderWidth: 2,
+                borderColor: `hsl(${idx * 60}, 70%, 50%)`,
+                backgroundColor: `hsl(${idx * 60}, 70%, 50%)`
+            }));
+        }
+
+        // Setup inicial
+        let metric = 'LucroBruto';
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        let chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: meses,
+                datasets: getDatasets(metric)
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'Performance Mensal dos Ativos' }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                return value.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Atualiza o gráfico ao mudar a opção do select
+        document.getElementById('tipoLucro').addEventListener('change', function () {
+            metric = this.value;
+            chart.data.datasets = getDatasets(metric);
+            chart.update();
+        });
+    </script>
+}
 
 <hr />
 

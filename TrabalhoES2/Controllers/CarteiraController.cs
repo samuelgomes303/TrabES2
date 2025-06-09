@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TrabalhoES2.Models;
-using TrabalhoES2.utils;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using TrabalhoES2.Services.Relatorios;
@@ -16,12 +15,14 @@ namespace TrabalhoES2.Controllers
         private readonly projetoPraticoDbContext _context;
         private readonly DepositoService _depositoService;
         private readonly FundoService _fundoService;
+        private readonly RelatorioBancoService _relatorioBancoService;
 
         public CarteiraController(projetoPraticoDbContext context)
         {
             _context = context;
             _depositoService = new DepositoService(_context); // Inicializa o serviço aqui
             _fundoService = new FundoService(_context);
+            _relatorioBancoService = new RelatorioBancoService(_context);
         }
 
 // GET: Carteira
@@ -362,15 +363,14 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
             await _depositoService.CriarDepositoAsync(deposito, ativo, userId);
             return RedirectToAction("AtivosCatalogo");
         }
-
-
-
+        
         [HttpGet]
         public async Task<IActionResult> Create()
         {
             ViewBag.Bancos = await _context.Bancos.ToListAsync();
             return View();
         }
+        
 
         // GET: Carteira/Edit/5
         [HttpGet]
@@ -758,11 +758,11 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
             }
             return RedirectToAction("AtivosCatalogo");
         }
-
         
         
-        //Relatorio
-        [HttpGet, ActionName("GerarRelatorio")]
+        
+        
+       [HttpGet, ActionName("GerarRelatorio")]
         public async Task<IActionResult> GerarRelatorio(int id, DateTime dataInicio, DateTime dataFim)
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -770,13 +770,13 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
             var carteira = await _context.Carteiras
                 .Include(c => c.Utilizador)
                 .Include(c => c.Ativofinanceiros)
-                .ThenInclude(a => a.Depositoprazo)
-                .ThenInclude(d => d.Banco)
+                    .ThenInclude(a => a.Depositoprazo)
+                        .ThenInclude(d => d.Banco)
                 .Include(c => c.Ativofinanceiros)
-                .ThenInclude(a => a.Fundoinvestimento)
-                .ThenInclude(f => f.Banco)
+                    .ThenInclude(a => a.Fundoinvestimento)
+                        .ThenInclude(f => f.Banco)
                 .Include(c => c.Ativofinanceiros)
-                .ThenInclude(a => a.Imovelarrendado)
+                    .ThenInclude(a => a.Imovelarrendado)
                 .FirstOrDefaultAsync(c => c.CarteiraId == id && c.UtilizadorId == userId);
 
             if (carteira == null)
@@ -790,27 +790,61 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
                 return RedirectToAction(nameof(Index));
             }
 
+            // Prepara a lista de meses completos no intervalo pedido
+            var meses = new List<DateTime>();
+            var dt = new DateTime(dataInicio.Year, dataInicio.Month, 1);
+            var ultimoMes = new DateTime(dataFim.Year, dataFim.Month, 1);
+            for (; dt <= ultimoMes; dt = dt.AddMonths(1))
+                meses.Add(dt);
+
+            // Lista para o gráfico de performance mensal
+            var performanceMensal = new List<dynamic>();
+
+            // Relatório geral para o período todo
+            var ativosRelatorio = new List<dynamic>();
+
             decimal lucroTotalBruto = 0;
             decimal impostosTotais = 0;
-            int totalMeses = (dataFim.Year - dataInicio.Year) * 12 + dataFim.Month - dataInicio.Month;
-
-            var ativosRelatorio = new List<dynamic>();
+            decimal lucroTotalLiquido = 0;
 
             foreach (var ativo in carteira.Ativofinanceiros)
             {
                 var calculadora = AtivoCalculadoraFactory.Criar(ativo);
 
-                if (!calculadora.AtivoRelevante(dataInicio, dataFim))
-                    continue;
+                // Adiciona ao relatório global (total do intervalo)
+                if (calculadora.AtivoRelevante(dataInicio, dataFim))
+                {
+                    dynamic relatorio = calculadora.CalcularLucro(dataInicio, dataFim);
+                    ativosRelatorio.Add(relatorio);
+                    lucroTotalBruto += relatorio.LucroBruto;
+                    impostosTotais += relatorio.Impostos;
+                    lucroTotalLiquido += relatorio.LucroLiquido;
+                }
 
-                dynamic relatorio = calculadora.CalcularLucro(dataInicio, dataFim);
+                // Calcula para cada mês do intervalo
+                foreach (var mes in meses)
+                {
+                    var inicioMes = new DateTime(mes.Year, mes.Month, 1);
+                    var fimMes = inicioMes.AddMonths(1);
 
-                ativosRelatorio.Add(relatorio);
-                lucroTotalBruto += relatorio.LucroBruto;
-                impostosTotais += relatorio.Impostos;
+                    if (!calculadora.AtivoRelevante(inicioMes, fimMes))
+                        continue;
+
+                    dynamic mensal = calculadora.CalcularLucro(inicioMes, fimMes);
+
+                    performanceMensal.Add(new
+                    {
+                        Mes = inicioMes.ToString("yyyy-MM"),
+                        TipoAtivo = mensal.TipoAtivo,
+                        LucroBruto = mensal.LucroBruto,
+                        Impostos = mensal.Impostos,
+                        LucroLiquido = mensal.LucroLiquido
+                    });
+                }
             }
 
-            decimal lucroTotalLiquido = lucroTotalBruto - impostosTotais;
+            int totalMeses = meses.Count;
+
             decimal lucroMensalMedioBruto = totalMeses > 0 ? lucroTotalBruto / totalMeses : 0;
             decimal lucroMensalMedioLiquido = totalMeses > 0 ? lucroTotalLiquido / totalMeses : 0;
 
@@ -822,9 +856,12 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
             ViewBag.LucroMensalMedioBruto = lucroMensalMedioBruto;
             ViewBag.LucroMensalMedioLiquido = lucroMensalMedioLiquido;
             ViewBag.AtivosRelatorio = ativosRelatorio;
+            ViewBag.PerformanceMensal = performanceMensal;
 
             return View(carteira);
         }
+
+        
         
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GestaoFundos()
@@ -848,8 +885,8 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
 
             return View("GestaoFundos", ativos);
         }
-
-
+        
+        
         
         
         [HttpGet, ActionName("GerarRelatorioImpostos")]
@@ -902,19 +939,52 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
         }
         
         
-        public IActionResult SelecionarRelatorio(int id)
+        
+        // relatorio admin com valor por banco
+        [Authorize(Roles = "Admin")]
+        [HttpGet, ActionName("GerarRelatorioBancos")]
+        public async Task<IActionResult> GerarRelatorioBancos(DateTime dataInicio, DateTime dataFim)
         {
-            var carteira = _context.Carteiras
-                .Include(c => c.Utilizador)
-                .FirstOrDefault(c => c.CarteiraId == id);
-
-            if (carteira == null)
+            if (!User.IsInRole("Admin"))
             {
-                return NotFound();
+                return Forbid("Apenas administradores podem aceder a este relatório.");
+            }
+
+            if (dataFim <= dataInicio)
+            {
+                TempData["Erro"] = "A data final deve ser posterior à data inicial.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var relatorio = await _relatorioBancoService.GerarRelatorioPorBanco(dataInicio, dataFim);
+
+            ViewBag.TpUtilizador = "Admin";
+            ViewBag.RelatorioBanco = relatorio;
+            ViewBag.DataInicio = dataInicio;
+            ViewBag.DataFim = dataFim;
+
+            return View("RelatorioValPBanco");
+        }
+        
+        
+        
+        public IActionResult SelecionarRelatorio(int? id)
+        {
+            TrabalhoES2.Models.Carteira carteira = null;
+
+            if (id.HasValue)
+            {
+                carteira = _context.Carteiras
+                    .Include(c => c.Utilizador)
+                    .FirstOrDefault(c => c.CarteiraId == id.Value);
+
+                if (carteira == null)
+                    return NotFound();
             }
 
             return View("SelecionarRelatorio", carteira);
         }
+        
         
         public decimal CalcularValorAtualComJuros(Fundoinvestimento fundo, Ativofinanceiro ativo)
         {
@@ -935,3 +1005,5 @@ public async Task<IActionResult> Index(int? bancoId, string tipo, decimal? monta
 
     }
 }
+
+
