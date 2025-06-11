@@ -208,7 +208,7 @@ public async Task<IActionResult> Index(
             var carteira = await _context.Carteiras.FirstOrDefaultAsync(c => c.UtilizadorId == userId);
             if (carteira == null) return NotFound();
 
-            // ⚠️ Corrigido: agora busca o ativo SEM restringir à carteira do cliente
+            //  Corrigido: agora busca o ativo SEM restringir à carteira do cliente
             var ativoOriginal = await _context.Ativofinanceiros
                 .Include(a => a.Depositoprazo)
                 .Include(a => a.Fundoinvestimento)
@@ -218,7 +218,7 @@ public async Task<IActionResult> Index(
             if (ativoOriginal == null)
                 return NotFound("Ativo não encontrado no catálogo.");
 
-            // ⚠️ Verifica se já existe ativo semelhante na carteira do cliente
+            //  Verifica se já existe ativo semelhante na carteira do cliente
             bool jaExiste = await _context.Ativofinanceiros
                 .AnyAsync(a => a.CarteiraId == carteira.CarteiraId &&
                                a.Depositoprazo != null &&
@@ -232,7 +232,7 @@ public async Task<IActionResult> Index(
                 return RedirectToAction("Index");
             }
 
-            // ✅ Cria o novo ativo para a carteira do utilizador
+            //  Cria o novo ativo para a carteira do utilizador
             var novoAtivo = new Ativofinanceiro
             {
                 CarteiraId = carteira.CarteiraId,
@@ -768,105 +768,148 @@ public async Task<IActionResult> Index(
         
         
         
-        
        [HttpGet, ActionName("GerarRelatorio")]
-        public async Task<IActionResult> GerarRelatorio(int id, DateTime dataInicio, DateTime dataFim)
+public async Task<IActionResult> GerarRelatorio(int id, DateTime dataInicio, DateTime dataFim)
+{
+    var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+    var carteira = await _context.Carteiras
+        .Include(c => c.Utilizador)
+        .Include(c => c.Ativofinanceiros)
+            .ThenInclude(a => a.Depositoprazo)
+                .ThenInclude(d => d.Banco)
+        .Include(c => c.Ativofinanceiros)
+            .ThenInclude(a => a.Fundoinvestimento)
+                .ThenInclude(f => f.Banco)
+        .Include(c => c.Ativofinanceiros)
+            .ThenInclude(a => a.Imovelarrendado)
+        .FirstOrDefaultAsync(c => c.CarteiraId == id && c.UtilizadorId == userId);
+
+    if (carteira == null)
+    {
+        return NotFound("Carteira não encontrada ou não pertence ao utilizador.");
+    }
+
+    if (dataFim <= dataInicio)
+    {
+        TempData["Erro"] = "A data final deve ser posterior à data inicial";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // Prepara a lista de meses completos no intervalo pedido
+    var meses = new List<DateTime>();
+    var dt = new DateTime(dataInicio.Year, dataInicio.Month, 1);
+    var ultimoMes = new DateTime(dataFim.Year, dataFim.Month, 1);
+    for (; dt <= ultimoMes; dt = dt.AddMonths(1))
+        meses.Add(dt);
+
+    // Lista para o gráfico de performance mensal
+    var performanceMensal = new List<dynamic>();
+
+    // Relatório geral para o período todo
+    var ativosRelatorio = new List<dynamic>();
+
+    decimal lucroTotalBruto = 0;
+    decimal impostosTotais = 0;
+    decimal lucroTotalLiquido = 0;
+
+    var helper = new TrabalhoES2.Services.Relatorios.RelatorioLucroHelper();
+
+    foreach (var ativo in carteira.Ativofinanceiros)
+    {
+        var calculadora = AtivoCalculadoraFactory.Criar(ativo);
+
+        // Adiciona ao relatório global (total do intervalo)
+        if (calculadora.AtivoRelevante(dataInicio, dataFim))
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            dynamic relatorio = calculadora.CalcularLucro(dataInicio, dataFim);
+            ativosRelatorio.Add(relatorio);
+            lucroTotalBruto += relatorio.LucroBruto;
+            impostosTotais += relatorio.Impostos;
+            lucroTotalLiquido += relatorio.LucroLiquido;
+        }
 
-            var carteira = await _context.Carteiras
-                .Include(c => c.Utilizador)
-                .Include(c => c.Ativofinanceiros)
-                    .ThenInclude(a => a.Depositoprazo)
-                        .ThenInclude(d => d.Banco)
-                .Include(c => c.Ativofinanceiros)
-                    .ThenInclude(a => a.Fundoinvestimento)
-                        .ThenInclude(f => f.Banco)
-                .Include(c => c.Ativofinanceiros)
-                    .ThenInclude(a => a.Imovelarrendado)
-                .FirstOrDefaultAsync(c => c.CarteiraId == id && c.UtilizadorId == userId);
+        // Apenas para Depósito a Prazo: calcula a evolução do saldo mês a mês para o gráfico
+        if (ativo.Depositoprazo != null && ativo.Datainicio.HasValue && ativo.Duracaomeses.HasValue)
+        {
+            var dataInicioAtivo = ativo.Datainicio.Value.ToDateTime(TimeOnly.MinValue);
+            var duracao = ativo.Duracaomeses.Value;
+            var evolucao = helper.CalcularEvolucaoDepositoMensal(ativo.Depositoprazo, dataInicioAtivo, duracao);
 
-            if (carteira == null)
+            foreach (var (mes, saldo) in evolucao)
             {
-                return NotFound("Carteira não encontrada ou não pertence ao utilizador.");
-            }
-
-            if (dataFim <= dataInicio)
-            {
-                TempData["Erro"] = "A data final deve ser posterior à data inicial";
-                return RedirectToAction(nameof(Index));
-            }
-
-            // Prepara a lista de meses completos no intervalo pedido
-            var meses = new List<DateTime>();
-            var dt = new DateTime(dataInicio.Year, dataInicio.Month, 1);
-            var ultimoMes = new DateTime(dataFim.Year, dataFim.Month, 1);
-            for (; dt <= ultimoMes; dt = dt.AddMonths(1))
-                meses.Add(dt);
-
-            // Lista para o gráfico de performance mensal
-            var performanceMensal = new List<dynamic>();
-
-            // Relatório geral para o período todo
-            var ativosRelatorio = new List<dynamic>();
-
-            decimal lucroTotalBruto = 0;
-            decimal impostosTotais = 0;
-            decimal lucroTotalLiquido = 0;
-
-            foreach (var ativo in carteira.Ativofinanceiros)
-            {
-                var calculadora = AtivoCalculadoraFactory.Criar(ativo);
-
-                // Adiciona ao relatório global (total do intervalo)
-                if (calculadora.AtivoRelevante(dataInicio, dataFim))
+                // Só adicionar se estiver dentro do intervalo do relatório pedido
+                if (mes >= dataInicio && mes <= dataFim)
                 {
-                    dynamic relatorio = calculadora.CalcularLucro(dataInicio, dataFim);
-                    ativosRelatorio.Add(relatorio);
-                    lucroTotalBruto += relatorio.LucroBruto;
-                    impostosTotais += relatorio.Impostos;
-                    lucroTotalLiquido += relatorio.LucroLiquido;
-                }
-
-                // Calcula para cada mês do intervalo
-                foreach (var mes in meses)
-                {
-                    var inicioMes = new DateTime(mes.Year, mes.Month, 1);
-                    var fimMes = inicioMes.AddMonths(1);
-
-                    if (!calculadora.AtivoRelevante(inicioMes, fimMes))
-                        continue;
-
-                    dynamic mensal = calculadora.CalcularLucro(inicioMes, fimMes);
-
                     performanceMensal.Add(new
                     {
-                        Mes = inicioMes.ToString("yyyy-MM"),
-                        TipoAtivo = mensal.TipoAtivo,
-                        LucroBruto = mensal.LucroBruto,
-                        Impostos = mensal.Impostos,
-                        LucroLiquido = mensal.LucroLiquido
+                        Mes = mes.ToString("yyyy-MM"),
+                        TipoAtivo = "Depósito a Prazo",
+                        Valor = saldo
                     });
                 }
             }
-
-            int totalMeses = meses.Count;
-
-            decimal lucroMensalMedioBruto = totalMeses > 0 ? lucroTotalBruto / totalMeses : 0;
-            decimal lucroMensalMedioLiquido = totalMeses > 0 ? lucroTotalLiquido / totalMeses : 0;
-
-            ViewBag.DataInicio = dataInicio;
-            ViewBag.DataFim = dataFim;
-            ViewBag.LucroTotalBruto = lucroTotalBruto;
-            ViewBag.ImpostosTotais = impostosTotais;
-            ViewBag.LucroTotalLiquido = lucroTotalLiquido;
-            ViewBag.LucroMensalMedioBruto = lucroMensalMedioBruto;
-            ViewBag.LucroMensalMedioLiquido = lucroMensalMedioLiquido;
-            ViewBag.AtivosRelatorio = ativosRelatorio;
-            ViewBag.PerformanceMensal = performanceMensal;
-
-            return View(carteira);
         }
+        // Imóvel Arrendado: evolução do saldo mês a mês
+        if (ativo.Imovelarrendado != null && ativo.Datainicio.HasValue && ativo.Duracaomeses.HasValue)
+        {
+            var dataInicioAtivo = ativo.Datainicio.Value.ToDateTime(TimeOnly.MinValue);
+            var duracao = ativo.Duracaomeses.Value;
+            var evolucao = helper.CalcularEvolucaoImovelMensal(ativo.Imovelarrendado, dataInicioAtivo, duracao);
+
+            foreach (var (mes, saldo) in evolucao)
+            {
+                if (mes >= dataInicio && mes <= dataFim)
+                {
+                    performanceMensal.Add(new
+                    {
+                        Mes = mes.ToString("yyyy-MM"),
+                        TipoAtivo = "Imóvel Arrendado",
+                        Valor = saldo
+                    });
+                }
+            }
+        }
+        if (ativo.Fundoinvestimento != null && ativo.Datainicio.HasValue && ativo.Duracaomeses.HasValue)
+        {
+            var dataInicioAtivo = ativo.Datainicio.Value.ToDateTime(TimeOnly.MinValue);
+            var duracao = ativo.Duracaomeses.Value;
+            var evolucao = helper.CalcularEvolucaoFundoMensal(ativo.Fundoinvestimento, dataInicioAtivo, duracao);
+
+            foreach (var (mes, saldo) in evolucao)
+            {
+                if (mes >= dataInicio && mes <= dataFim)
+                {
+                    performanceMensal.Add(new
+                    {
+                        Mes = mes.ToString("yyyy-MM"),
+                        TipoAtivo = "Fundo de Investimento",
+                        Valor = saldo
+                    });
+                }
+            }
+        }
+        
+    }
+
+    int totalMeses = meses.Count;
+
+    decimal lucroMensalMedioBruto = totalMeses > 0 ? lucroTotalBruto / totalMeses : 0;
+    decimal lucroMensalMedioLiquido = totalMeses > 0 ? lucroTotalLiquido / totalMeses : 0;
+
+    ViewBag.DataInicio = dataInicio;
+    ViewBag.DataFim = dataFim;
+    ViewBag.LucroTotalBruto = lucroTotalBruto;
+    ViewBag.ImpostosTotais = impostosTotais;
+    ViewBag.LucroTotalLiquido = lucroTotalLiquido;
+    ViewBag.LucroMensalMedioBruto = lucroMensalMedioBruto;
+    ViewBag.LucroMensalMedioLiquido = lucroMensalMedioLiquido;
+    ViewBag.AtivosRelatorio = ativosRelatorio;
+    ViewBag.PerformanceMensal = performanceMensal;
+
+    return View(carteira);
+}
+       
 
         
         

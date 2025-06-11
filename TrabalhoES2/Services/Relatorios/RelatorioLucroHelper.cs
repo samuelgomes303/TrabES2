@@ -47,7 +47,72 @@ public class RelatorioLucroHelper
             lucroMedioMensalBruto = lucroBruto / mesesNoPeriodo;
             lucroMensalMedioDepoisImpostos = lucroDepoisImpostos / mesesNoPeriodo; // depois de impostos
         }
+    
+    
+    public List<(DateTime Mes, decimal Saldo)> CalcularEvolucaoDepositoMensal(
+        Depositoprazo deposito,
+        DateTime dataInicio,
+        int duracaoMeses
+    )
+    {
+        var resultado = new List<(DateTime, decimal)>();
+        decimal saldo = deposito.Valorinicial;
+        decimal taxaMensal = deposito.Taxajuroanual / 12 / 100;
 
+        var mesCorrente = new DateTime(dataInicio.Year, dataInicio.Month, 1);
+
+        for (int i = 0; i <= duracaoMeses; i++)
+        {
+            resultado.Add((mesCorrente, saldo));
+            saldo *= (1 + taxaMensal);
+            mesCorrente = mesCorrente.AddMonths(1);
+        }
+
+        return resultado;
+    }
+    
+    public List<(DateTime Mes, decimal Saldo)> CalcularEvolucaoImovelMensal(
+        Imovelarrendado imovel,
+        DateTime dataInicio,
+        int duracaoMeses)
+    {
+        var resultado = new List<(DateTime, decimal)>();
+        decimal saldo = 0;
+        decimal despesasMensais = (imovel.Valoranualdespesas / 12M) + imovel.Valormensalcondo;
+        decimal lucroMensal = imovel.Valorrenda - despesasMensais;
+
+        var mesCorrente = new DateTime(dataInicio.Year, dataInicio.Month, 1);
+
+        for (int i = 0; i <= duracaoMeses; i++)
+        {
+            resultado.Add((mesCorrente, saldo));
+            saldo += lucroMensal;
+            mesCorrente = mesCorrente.AddMonths(1);
+        }
+
+        return resultado;
+    }
+    
+    public List<(DateTime Mes, decimal Saldo)> CalcularEvolucaoFundoMensal(
+        Fundoinvestimento fundo,
+        DateTime dataInicio,
+        int duracaoMeses)
+    {
+        var resultado = new List<(DateTime, decimal)>();
+        decimal saldo = fundo.Montanteinvestido;
+        decimal taxaMensal = fundo.Taxajuropdefeito / 12M / 100M;
+
+        var mesCorrente = new DateTime(dataInicio.Year, dataInicio.Month, 1);
+
+        for (int i = 0; i <= duracaoMeses; i++)
+        {
+            resultado.Add((mesCorrente, saldo));
+            saldo *= (1 + taxaMensal);
+            mesCorrente = mesCorrente.AddMonths(1);
+        }
+
+        return resultado;
+    }
 
     public void CalcularLucroImovel(Imovelarrendado imovel, decimal percImposto, DateOnly dataInicioAtivo, DateTime inicioPeriodo, DateTime fimPeriodo,
             out decimal lucroBruto, 

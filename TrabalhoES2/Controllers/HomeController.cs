@@ -28,8 +28,15 @@ namespace TrabalhoES2.Controllers
         {
             // 1) Buscar utilizador actual
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) 
-                return Challenge(); // ou RedirectToAction("Login","Account");
+            if (user == null)
+                return Challenge();
+
+            var roles = await _userManager.GetRolesAsync(user);
+            if (roles.Contains("Admin"))
+            {
+                ViewBag.IsAdmin = true;
+                return View(); // Passa sem carteira
+            }
 
             // 2) Eager‐load da carteira + utilizador + ativos + cada tipo + banco
             var carteira = await _context.Carteiras

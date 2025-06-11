@@ -27,7 +27,7 @@ public class DepositoService
 
         deposito.AtivofinanceiroId = ativo.AtivofinanceiroId;
     
-        // ✅ Corrigido: cálculo da expectativa de rendimento (valor atual)
+        //: cálculo da expectativa de rendimento (valor atual)
         int meses = ativo.Duracaomeses ?? 0;
         deposito.Valoratual = CalcularValorAtualAoDia(
             deposito.Valorinicial,
@@ -40,7 +40,7 @@ public class DepositoService
         await _context.SaveChangesAsync();
     }
 
-    // ✅ Fórmula correta de rendimento após imposto
+    //  Fórmula correta de rendimento após imposto atual ao dia
     private decimal CalcularValorAtualAoDia(decimal valorInicial, decimal taxaAnual, DateOnly dataInicio)
     {
         var TANB = taxaAnual / 100m;

@@ -5,6 +5,7 @@
 @{
     ViewData["Title"] = "Minha Carteira";
     var iniciais = Model.Ativofinanceiros;
+    var isAdmin = ViewBag.IsAdmin != null && (bool)ViewBag.IsAdmin;
 }
 
 @* — estilos isolados para a view Minha Carteira *@
@@ -183,7 +184,14 @@ else
                       : fundo != null ? "Fundo" : "Imóvel")
                   </span>
                 </td>
-                <td>@ativo.Duracaomeses mês@(ativo.Duracaomeses > 1 ? "es" : "")</td>
+                <td>
+                  @{
+                  var duracaoMeses = ativo.Duracaomeses ?? 0;
+                  var sufixo = duracaoMeses == 1 ? "mês" : "meses";
+                  }
+                  @duracaoMeses @sufixo
+                </td>
+
                 <td>@ativo.Datainicio?.ToString("dd/MM/yyyy")</td>
                 <td>
                   @(((ativo.Depositoprazo?.Valorinicial
@@ -195,7 +203,7 @@ else
                   @{
                     decimal exp = 0;
                     string per = "";
-                    if (ativo.Depositoprazo != null) {
+                    if (ativo.Depositoprazo != null) { //Expectativa de Rendimento no fim do deposito anualmente
                       var taxa = ativo.Depositoprazo.Taxajuroanual/100m;
                       var meses = ativo.Duracaomeses ?? 0;
                       exp = ativo.Depositoprazo.Valorinicial*taxa*meses/12m*(1-0.28m);

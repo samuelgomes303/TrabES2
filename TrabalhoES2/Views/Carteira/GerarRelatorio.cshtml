@@ -3,10 +3,10 @@
     ViewData["Title"] = "Relatório da Carteira";
     var utilizador = Model.Utilizador;
     var ativos = (List<dynamic>)ViewBag.AtivosRelatorio ?? new List<dynamic>();
+    var performanceMensal = ViewBag.PerformanceMensal as List<dynamic> ?? new List<dynamic>();
     bool hasAtivos = ativos.Any();
 }
 
-@* — estilos isolados para relatório de carteira *@
 <style>
   .header-title {
     color: #17a2b8;
@@ -34,6 +34,18 @@
   }
   .period p {
     margin: .25rem 0;
+  }
+  .performance-section {
+    margin: 2rem 0;
+  }
+  .performance-header {
+    font-weight: 600;
+    color: #218838;
+    margin-bottom: 1.2rem;
+    letter-spacing: 0.03rem;
+  }
+  .performance-controls {
+    margin-bottom: 1.2rem;
   }
 </style>
 
@@ -90,8 +102,92 @@ else
 
 <hr />
 
-<div class="period">
-  <h4>Período:</h4>
-  <p><strong>Data Início:</strong> @((DateTime)ViewBag.DataInicio)</p>
-  <p><strong>Data Fim:</strong>   @((DateTime)ViewBag.DataFim)</p>
+<div class="performance-section">
+  <div class="performance-header">Evolução do Saldo dos Ativos</div>
+  <canvas id="performanceChart" height="100"></canvas>
 </div>
+
+@section Scripts {
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+        // Dados vindos do ViewBag.PerformanceMensal (serializado em JSON)
+        const dataServer = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.PerformanceMensal ?? new List<dynamic>()));
+
+        // Dados separados por tipo de ativo
+        const dataDeposito = dataServer.filter(x => x.TipoAtivo === "Depósito a Prazo");
+        const dataImovel = dataServer.filter(x => x.TipoAtivo === "Imóvel Arrendado");
+        const dataFundo = dataServer.filter(x => x.TipoAtivo === "Fundo de Investimento");
+
+        // Extrai meses únicos e ordena
+        const meses = [...new Set([...dataDeposito, ...dataImovel, ...dataFundo].map(x => x.Mes))].sort();
+
+        // Preenche os saldos por mês (null se não houver valor nesse mês)
+        const saldosDeposito = meses.map(mes => {
+            const item = dataDeposito.find(x => x.Mes === mes);
+            return item ? item.Valor : null;
+        });
+        const saldosImovel = meses.map(mes => {
+            const item = dataImovel.find(x => x.Mes === mes);
+            return item ? item.Valor : null;
+        });
+        const saldosFundo = meses.map(mes => {
+          const item = dataFundo.find(x => x.Mes === mes);
+          return item ? item.Valor : null;
+        });
+
+        // Cria o gráfico
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        let chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: meses,
+            datasets: [
+              {
+                label: "Depósito a Prazo",
+                data: saldosDeposito,
+                fill: false,
+                tension: 0.2,
+                borderWidth: 2,
+                borderColor: "#e84848",
+                backgroundColor: "#e84848"
+              },
+              {
+                label: "Imóvel Arrendado",
+                data: saldosImovel,
+                fill: false,
+                tension: 0.2,
+                borderWidth: 2,
+                borderColor: "#1b7b34",
+                backgroundColor: "#1b7b34"
+              },
+              {
+                label: "Fundo de Investimento",
+                data: saldosFundo,
+                fill: false,
+                tension: 0.2,
+                borderWidth: 2,
+                borderColor: "#2b4cb3",
+                backgroundColor: "#2b4cb3"
+              }
+            ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'Evolução do Saldo dos Ativos' }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function (value) {
+                                return value != null ? value.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' }) : '';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}
