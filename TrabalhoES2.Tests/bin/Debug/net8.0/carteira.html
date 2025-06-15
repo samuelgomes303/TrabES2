@@ -1,0 +1,225 @@
+<html lang="en"><head><style>
+  /* Body flex para footer fixo */
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Navbar customizada */
+  .navbar {
+    background: linear-gradient(135deg, #0052D4, #4364F7);
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  }
+  .navbar-brand, .nav-link {
+    color: #fff !important;
+    font-weight: 500;
+    transition: color .2s;
+  }
+  .nav-link:hover {
+    color: #ffd54f !important;
+  }
+  .navbar-toggler {
+    border-color: rgba(255,255,255,.5);
+  }
+  .navbar-toggler-icon {
+    filter: invert(1);
+  }
+
+  /* Container principal */
+  .app-container {
+    flex: 1;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Footer fixo */
+  footer.footer {
+    background: #f8f9fa;
+    padding: 1rem 0;
+    margin-top: auto;
+    text-align: center;
+    font-size: .9rem;
+    color: #6c757d;
+    border-top: 1px solid #e4e5e7;
+  }
+</style>
+
+
+
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log in - TrabalhoES2</title>
+
+  <!-- Bootstrap Flatly + SB Admin -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="/sbadmin/css/sb-admin-2.min.css">
+  <link rel="stylesheet" href="/sbadmin/vendor/fontawesome-free/css/all.min.css">
+</head>
+
+<body>
+  <header b-p5x4s62gne="">
+    <nav b-p5x4s62gne="" class="navbar navbar-expand-sm navbar-dark">
+      <div b-p5x4s62gne="" class="container">
+        <a class="navbar-brand" href="/">
+          <i b-p5x4s62gne="" class="fas fa-chart-line me-1"></i>TrabalhoES2
+        </a>
+        <button b-p5x4s62gne="" class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span b-p5x4s62gne="" class="navbar-toggler-icon"></span>
+        </button>
+
+        <div b-p5x4s62gne="" class="collapse navbar-collapse" id="navbarContent">
+          <ul b-p5x4s62gne="" class="navbar-nav me-auto">
+          </ul>
+          <ul b-p5x4s62gne="" class="navbar-nav ms-auto">
+              <li b-p5x4s62gne="" class="nav-item">
+                <a class="nav-link" href="/Identity/Account/Register">
+                  <i b-p5x4s62gne="" class="fas fa-user-plus me-1"></i>Register
+                </a>
+              </li>
+              <li b-p5x4s62gne="" class="nav-item">
+                <a class="nav-link" href="/Identity/Account/Login">
+                  <i b-p5x4s62gne="" class="fas fa-sign-in-alt me-1"></i>Login
+                </a>
+              </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <div b-p5x4s62gne="" class="container app-container">
+    <main b-p5x4s62gne="" role="main">
+      
+
+
+<style>
+  .login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 90vh;
+    background: white;
+  }
+  .login-card {
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,.1);
+    max-width: 400px;
+    width: 100%;
+    overflow: hidden;
+    animation: fadeInUp 0.8s ease-out;
+  }
+  .login-card .card-header {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: #fff;
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+  .login-card .card-body {
+    padding: 2rem;
+  }
+  .form-floating > .form-control {
+    border-radius: .5rem;
+  }
+  .form-check-input {
+    transform: scale(1.2);
+    margin-top: .25rem;
+  }
+  .btn-login {
+    border-radius: .5rem;
+    padding: .75rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .login-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: .875rem;
+  }
+  .login-footer a {
+    color: #0056b3;
+    text-decoration: none;
+  }
+  .login-footer a:hover {
+    text-decoration: underline;
+  }
+  keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<div class="login-page">
+  <div class="card login-card">
+    <div class="card-header">
+      Log in
+    </div>
+    <div class="card-body">
+      <form method="post" id="account" novalidate="novalidate">
+        
+
+        <div class="form-floating mb-3">
+          <input class="form-control" placeholder="Email" type="email" data-val="true" data-val-email="The Email field is not a valid e-mail address." data-val-required="The Email field is required." id="Input_Email" name="Input.Email" value="">
+          <label for="Input_Email">Email</label>
+          <span class="text-danger field-validation-valid" data-valmsg-for="Input.Email" data-valmsg-replace="true"></span>
+        </div>
+
+        <div class="form-floating mb-3">
+          <input type="password" class="form-control" placeholder="Password" data-val="true" data-val-required="The Password field is required." id="Input_Password" name="Input.Password">
+          <label for="Input_Password">Password</label>
+          <span class="text-danger field-validation-valid" data-valmsg-for="Input.Password" data-valmsg-replace="true"></span>
+        </div>
+
+        <div class="form-check mb-4">
+          <input class="form-check-input" type="checkbox" data-val="true" data-val-required="The Remember me? field is required." id="Input_RememberMe" name="Input.RememberMe" value="true">
+          <label class="form-check-label" for="Input_RememberMe">
+            Remember me?
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 btn-login">
+          Log in
+        </button>
+
+        <div class="login-footer">
+          <p><a href="/Identity/Account/ForgotPassword">Forgot your password?</a></p>
+          <p><a href="/Identity/Account/Register?returnUrl=%2FCarteira">
+            Don't have an account? Register</a></p>
+          <p><a href="/Identity/Account/ResendEmailConfirmation">Resend email confirmation</a></p>
+        </div>
+      <input name="__RequestVerificationToken" type="hidden" value="CfDJ8BuoYaU2-s5Lo32teCM523Zkvmt8WVNa6cWAuic_Yeya7IdsABX-_j1usOvAUpn2VbKLW6G210TQs5KhwfJVY4nzUFAMyzBJpCj6RdULIXj9vXJvpb6JNxc8aE_7UggFTyUr6lC6BBWAc6RlSYj0z_M"><input name="Input.RememberMe" type="hidden" value="false"></form>
+    </div>
+  </div>
+</div>
+
+
+    </main>
+  </div>
+
+  <footer b-p5x4s62gne="" class="footer">
+    <div b-p5x4s62gne="" class="container">
+      © 2025 – TrabalhoES2
+    </div>
+  </footer>
+
+  <script src="/lib/jquery/dist/jquery.min.js"></script>
+  <script src="/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/site.js?v=hRQyftXiu1lLX2P9Ly9xa4gHJgLeR1uGN5qegUobtGo"></script>
+  
+    <script src="/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+
+
+
+</body></html>

@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrabalhoES2.Tests", "TrabalhoES2.Tests\TrabalhoES2.Tests.csproj", "{211D2967-4BDC-4B5F-9CBD-B5FB311CFE83}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrabalhoES2", "..\TrabES2\TrabalhoES2\TrabalhoES2.csproj", "{8FE509F5-FF19-487D-B805-688513A41EC8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{211D2967-4BDC-4B5F-9CBD-B5FB311CFE83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{211D2967-4BDC-4B5F-9CBD-B5FB311CFE83}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{211D2967-4BDC-4B5F-9CBD-B5FB311CFE83}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{211D2967-4BDC-4B5F-9CBD-B5FB311CFE83}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FE509F5-FF19-487D-B805-688513A41EC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FE509F5-FF19-487D-B805-688513A41EC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FE509F5-FF19-487D-B805-688513A41EC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FE509F5-FF19-487D-B805-688513A41EC8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
