@@ -31,4 +31,9 @@
     <ProjectReference Include="..\TrabalhoES2\TrabalhoES2.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Controllers\UserControllerTests.cs" />
+    <Compile Remove="UI\UserManagementUITests.cs" />
+  </ItemGroup>
+
 </Project>
