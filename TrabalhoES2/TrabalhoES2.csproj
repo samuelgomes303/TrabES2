@@ -31,6 +31,7 @@
     <ItemGroup>
         <Compile Remove="GlobalUsings.cs" />
         <Compile Remove="Tests\CarteiraControllerTests.cs" />
+        <Compile Remove="Tests\**" />
     </ItemGroup>
 
     <ItemGroup>
@@ -39,6 +40,15 @@
 
     <ItemGroup>
       <None Remove="dotnet" />
+      <None Remove="Tests\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="Tests\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Remove="Tests\**" />
     </ItemGroup>
 
 </Project>
