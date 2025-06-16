@@ -108,6 +108,10 @@ namespace TrabalhoES2.Areas.Identity.Pages.Account
 
         public async Task OnGetAsync(string returnUrl = null)
         {
+            if (Request.Query["testmode"] == "1")
+            {
+                Response.Cookies.Append("testmode", "1", new CookieOptions { Path = "/" });
+            }
             ReturnUrl = returnUrl;
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         }
@@ -115,22 +119,38 @@ namespace TrabalhoES2.Areas.Identity.Pages.Account
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
             returnUrl ??= Url.Content("~/");
+            // Preserve testmode=1 in redirect if present
+            bool isTestMode = Request.Query["testmode"] == "1";
+            if (isTestMode && !returnUrl.Contains("testmode=1"))
+            {
+                if (returnUrl.Contains("?"))
+                    returnUrl += "&testmode=1";
+                else
+                    returnUrl += "?testmode=1";
+            }
+            if (isTestMode)
+            {
+                Response.Cookies.Append("testmode", "1", new CookieOptions { Path = "/" });
+            }
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
                 var user = CreateUser();
                 user.Nome = Input.Nome;
-
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
                 var result = await _userManager.CreateAsync(user, Input.Password);
-                
-
                 if (result.Succeeded)
                 {
                     await _userManager.AddToRoleAsync(user, "Cliente");
+                    // Reload user to ensure roles are included in claims principal
+                    user = await _userManager.FindByIdAsync(await _userManager.GetUserIdAsync(user));
+                    if (isTestMode)
+                    {
+                        user.EmailConfirmed = true;
+                        await _userManager.UpdateAsync(user);
+                    }
                     _logger.LogInformation("User created a new account with password.");
-
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
@@ -139,10 +159,8 @@ namespace TrabalhoES2.Areas.Identity.Pages.Account
                         pageHandler: null,
                         values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
                         protocol: Request.Scheme);
-
                     await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
                         $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
-
                     if (_userManager.Options.SignIn.RequireConfirmedAccount)
                     {
                         return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });

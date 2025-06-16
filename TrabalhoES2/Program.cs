@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using TrabalhoES2.Models;
-using TrabalhoES2.Services; // Adicione esta linha
-using TrabalhoES2.utils;
+using TrabalhoES2.Services;
+using TrabalhoES2.utils; // para TestAuthHandler
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,27 +17,42 @@ builder.Services.AddTransient<IEmailSender, FakeEmailSender>();
 builder.Services.AddDbContext<projetoPraticoDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 3) Configuração do Identity COM UI integrada
+// 3) Identity COM UI integrada
 builder.Services.AddIdentity<Utilizador, IdentityRole<int>>(options =>
     {
-        // Aqui podes configurar requisitos de password, lockout, etc.
+        // configure requisitos de password, lockout, etc.
     })
     .AddEntityFrameworkStores<projetoPraticoDbContext>()
     .AddDefaultTokenProviders()
-    .AddDefaultUI();    // <<< Isto garante que as páginas /Identity/Account/Login, Register, etc. ficam disponíveis
+    .AddDefaultUI();
 
 // 4) Claims principal factory (custom)
 builder.Services.AddScoped<IUserClaimsPrincipalFactory<Utilizador>, AppUserClaimsPrincipalFactory>();
 
+// 5) Autenticação de teste em ambiente “Test”
+if (builder.Environment.IsEnvironment("Test"))
+{
+    // substitui o esquema default para “Test” que sempre autentica um utilizador fictício
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = "Test";
+        options.DefaultChallengeScheme = "Test";
+    })
+    .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", options => { });
+    // Se tiver configurações de Authorization policies, elas serão avaliadas com este principal.
+}
+// Caso contrário, em ambiente normal, UseAuthentication/UseAuthorization mantém o Identity normal.
+
 var app = builder.Build();
 
-// 5) Pipeline
+// 6) Pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
+// Seed roles/usuário
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -52,11 +68,11 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 6) Rotas de controllers e Razor Pages
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
-app.MapRazorPages();  // <<< Isto garante que as páginas em /Areas/Identity/Pages/... são servidas
+app.MapRazorPages();
 
 app.Run();
+
+public partial class Program { }

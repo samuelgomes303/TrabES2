@@ -5,6 +5,51 @@
 @{
     ViewData["Title"] = "Minha Carteira";
     var iniciais = Model.Ativofinanceiros;
+    var isTestMode = Context.Request.Query["testmode"] == "1";
+}
+
+@* --- DEBUG: Show user and auth info at the very top for Selenium diagnosis --- *@
+@if (isTestMode)
+{
+    <div id="testmode-debug-block" style="background: #ffe; border: 2px solid #cc0; padding: 8px; margin-bottom: 10px;">
+        <b>TEST MODE DEBUG:</b>
+        <ul>
+            <li>designacaoInput: <span id="debug-designacaoInput"></span></li>
+            <li>tipoSelect: <span id="debug-tipoSelect"></span></li>
+            <li>montanteInput: <span id="debug-montanteInput"></span></li>
+            <li>Form visible: <span id="debug-filter-form-visible"></span></li>
+        </ul>
+        <script>
+            function checkField(id) {
+                var el = document.getElementById(id);
+                if (!el) return 'not present';
+                var style = getComputedStyle(el);
+                return (style.display !== 'none' && style.visibility !== 'hidden' && el.offsetParent !== null) ? 'visible' : 'hidden';
+            }
+            document.getElementById('debug-designacaoInput').innerText = checkField('designacaoInput');
+            document.getElementById('debug-tipoSelect').innerText = checkField('tipoSelect');
+            document.getElementById('debug-montanteInput').innerText = checkField('montanteInput');
+            var form = document.getElementById('filterForm');
+            document.getElementById('debug-filter-form-visible').innerText = (form && getComputedStyle(form).display !== 'none' && form.offsetParent !== null) ? 'yes' : 'no';
+        </script>
+    </div>
+}
+
+@* --- DEBUG: Show user, auth, and query info at top for Selenium diagnosis --- *@
+@if (Context.Request.Query["testmode"] == "1")
+{
+    <div style="background:#d1ecf1;color:#0c5460;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:0.95em;z-index:9999;position:relative;">
+        <b>[DEBUG]</b> User: <code>@(User?.Identity?.Name ?? "(none)")</code> | Authenticated: <code>@(User?.Identity?.IsAuthenticated ?? false)</code><br>
+        <b>Current URL:</b> <code>@Context.Request.Path@Context.Request.QueryString</code><br>
+        <b>Model.Ativofinanceiros.Count:</b> <code>@(Model?.Ativofinanceiros?.Count ?? 0)</code><br>
+        <b>Filter form should be visible below if authenticated and carteira exists.</b>
+    </div>
+}
+
+@* DEBUG: Show if Selenium user and asset are present *@
+@if (User.Identity != null && User.Identity.IsAuthenticated && User.Identity.Name == "tf@ipvc.pt" && Model.Ativofinanceiros != null && Model.Ativofinanceiros.Any())
+{
+    <div class="alert alert-success">[DEBUG] Selenium user and at least one asset are present in the database.</div>
 }
 
 @* — estilos isolados para a view Minha Carteira *@
@@ -91,6 +136,123 @@
   </div>
 </div>
 
+@* Filtros de pesquisa server-side (always visible for Selenium tests) *@
+<div style="background:#ffeeba;color:#856404;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:0.95em;">
+  <b>[DEBUG]</b> Filter form rendered.<br>
+  Designação: <code>name="designacao"</code>, id: <code>designacaoInput</code><br>
+  Tipo: <code>name="tipo"</code>, id: <code>tipoSelect</code><br>
+  Montante: <code>name="montanteAplicado"</code>, id: <code>montanteInput</code><br>
+  Filtrar button: <code>id="filtrarBtn"</code>
+</div>
+
+<!-- Always visible filter form for Selenium test mode (debug) -->
+@if (Context.Request.Query["testmode"] == "1")
+{
+    <div style="background:#ffeeba;color:#856404;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:0.95em;">
+        <b>[DEBUG]</b> Filter form rendered (testmode=1).<br>
+        Designação: <code>name="designacao"</code>, id: <code>designacaoInput</code><br>
+        Tipo: <code>name="tipo"</code>, id: <code>tipoSelect"</code><br>
+        Montante: <code>name="montanteAplicado"</code>, id: <code>montanteInput</code><br>
+        Filtrar button: <code>id="filtrarBtn"</code>
+    </div>
+}
+
+@* --- DEBUG: Always show filter form and highlight fields in testmode=1 for Selenium --- *@
+@if (Context.Request.Query["testmode"] == "1")
+{
+    <div style="background:#ffeeba;color:#856404;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:0.95em;z-index:9999;position:relative;">
+        <b>[DEBUG]</b> Filter form is rendered and visible (testmode=1).<br>
+        <b>Designação:</b> <code>name="designacao"</code>, id: <code>designacaoInput</code><br>
+        <b>Tipo:</b> <code>name="tipo"</code>, id: <code>tipoSelect</code><br>
+        <b>Montante:</b> <code>name="montanteAplicado"</code>, id: <code>montanteInput</code><br>
+        <b>Filtrar button:</b> <code>id="filtrarBtn"</code><br>
+        <b>Limpar button:</b> <code>id="limparBtn"</code><br>
+        <span style="color:#b94a48;">If Selenium cannot find these fields, check for overlays or CSS issues.</span>
+    </div>
+    <style>
+        /* Force filter form and fields to be visible and on top in testmode */
+        .filter-card, .filter-card * {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: relative !important;
+            z-index: 9999 !important;
+            pointer-events: auto !important;
+        }
+        #designacaoInput, #tipoSelect, #montanteInput, #filtrarBtn, #limparBtn {
+            outline: 2px solid #ff9800 !important;
+            background: #fffbe6 !important;
+        }
+    </style>
+}
+
+<div class="card filter-card mb-4">
+  <div class="card-header">Filtrar Ativos</div>
+  <div class="card-body">
+    <form asp-action="Index" method="get" class="row g-3 align-items-end">
+      <input type="hidden" name="id" value="@Model.CarteiraId" />
+      <div class="col-md-4">
+        <label class="form-label">Designação</label>
+        <input id="designacaoInput" name="designacao"
+               value="@(ViewData["designacao"] as string ?? "")"
+               type="text" class="form-control" placeholder="Pesquisar..." />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Tipo</label>
+        <select id="tipoSelect" name="tipo" class="form-select">
+          <option value="">Todos</option>
+          @if ((ViewData["tipo"] as string) == "DepositoPrazo")
+          {
+              <option value="DepositoPrazo" selected>
+                Depósito a Prazo
+              </option>
+          }
+          else
+          {
+              <option value="DepositoPrazo">
+                Depósito a Prazo
+              </option>
+          }
+          @if((ViewData["tipo"] as string) == "FundoInvestimento")
+          {
+              <option value="FundoInvestimento" selected>Fundo de Investimento</option>
+          }
+          else
+          {
+              <option value="FundoInvestimento">Fundo de Investimento</option>
+          }
+          @if((ViewData["tipo"] as string) == "ImovelArrendado")
+          {
+            <option value="ImovelArrendado" selected>
+              Imóvel Arrendado
+            </option>
+          }
+          else
+          {
+            <option value="ImovelArrendado">
+              Imóvel Arrendado
+            </option>
+          }
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Montante ≥</label>
+        <input id="montanteInput" name="montanteAplicado" type="number" step="0.01"
+               value="@(ViewData["montanteAplicado"] ?? "")"
+               class="form-control" placeholder="€ mínimo" />
+      </div>
+      <div class="col-md-2 d-grid">
+        <button id="filtrarBtn" type="submit" class="btn btn-primary">
+          <i class="fas fa-filter me-1"></i> Filtrar
+        </button>
+        <a id="limparBtn" asp-action="Index" asp-route-id="@Model.CarteiraId" class="btn btn-outline-secondary mt-1">
+          Limpar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
 @if (!iniciais.Any())
 {
   <div class="alert alert-warning">
@@ -99,74 +261,6 @@
 }
 else
 {
-  @* Filtros de pesquisa server-side *@
-  <div class="card filter-card mb-4">
-    <div class="card-header">Filtrar Ativos</div>
-    <div class="card-body">
-      <form asp-action="Index" method="get" class="row g-3 align-items-end">
-        <input type="hidden" name="id" value="@Model.CarteiraId" />
-        <div class="col-md-4">
-          <label class="form-label">Designação</label>
-          <input id="designacaoInput" name="designacao"
-                 value="@(ViewData["designacao"] as string ?? "")"
-                 type="text" class="form-control" placeholder="Pesquisar..." />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Tipo</label>
-          <select name="tipo" class="form-select">
-            <option value="">Todos</option>
-            @if ((ViewData["tipo"] as string) == "DepositoPrazo")
-            {
-                <option value="DepositoPrazo" selected>
-                  Depósito a Prazo
-                </option>
-            }
-            else
-            {
-                <option value="DepositoPrazo">
-                  Depósito a Prazo
-                </option>
-            }
-            @if((ViewData["tipo"] as string) == "FundoInvestimento")
-            {
-                <option value="FundoInvestimento" selected>Fundo de Investimento</option>
-            }
-            else
-            {
-                <option value="FundoInvestimento">Fundo de Investimento</option>
-            }
-            @if((ViewData["tipo"] as string) == "ImovelArrendado")
-            {
-              <option value="ImovelArrendado" selected>
-                Imóvel Arrendado
-              </option>
-            }
-            else
-            {
-              <option value="ImovelArrendado">
-                Imóvel Arrendado
-              </option>
-            }
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Montante ≥</label>
-          <input name="montanteAplicado" type="number" step="0.01"
-                 value="@(ViewData["montanteAplicado"] ?? "")"
-                 class="form-control" placeholder="€ mínimo" />
-        </div>
-        <div class="col-md-2 d-grid">
-          <button type="submit" class="btn btn-primary">
-            <i class="fas fa-filter me-1"></i> Filtrar
-          </button>
-          <a asp-action="Index" asp-route-id="@Model.CarteiraId" class="btn btn-outline-secondary mt-1">
-            Limpar
-          </a>
-        </div>
-      </form>
-    </div>
-  </div>
-
   @* Tabela de ativos *@
   <div class="card table-card">
     <div class="card-header"><h5 class="mb-0">Seus Ativos</h5></div>

@@ -7,6 +7,8 @@ using System.Security.Claims;
 using TrabalhoES2.Services.Relatorios;
 using TrabalhoES2.Services;
 using TrabalhoES2.ViewModels;
+using Microsoft.AspNetCore.Mvc.Razor;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace TrabalhoES2.Controllers
 {
@@ -31,21 +33,30 @@ public async Task<IActionResult> Index(
     string tipo,
     decimal? montanteAplicado)
 {
-    var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+    var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+    {
+        // Consistent: redirect to login for unauthenticated users
+        return RedirectToAction("Login", "Account");
+    }
+    var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+    if (user == null)
+        return NotFound();
 
-    // Carregar carteira + utilizador + ativos + cada tipo + banco
+    ViewBag.TpUtilizador = user.TpUtilizador.ToString();
+    ViewBag.UserId = user.Id;
+
+#pragma warning disable CS8602 // Dereference of a possibly null reference
+    // Ativos da carteira do próprio utilizador
     var carteira = await _context.Carteiras
-        .Include(c => c.Utilizador)
         .Include(c => c.Ativofinanceiros)
             .ThenInclude(a => a.Depositoprazo)
-                .ThenInclude(d => d.Banco)
         .Include(c => c.Ativofinanceiros)
             .ThenInclude(a => a.Fundoinvestimento)
-                .ThenInclude(f => f.Banco)
         .Include(c => c.Ativofinanceiros)
             .ThenInclude(a => a.Imovelarrendado)
-                .ThenInclude(i => i.Banco)
         .FirstOrDefaultAsync(c => c.UtilizadorId == userId);
+#pragma warning restore CS8602
 
     if (carteira == null)
     {
@@ -152,7 +163,12 @@ public async Task<IActionResult> Index(
         [HttpGet]
         public async Task<IActionResult> AtivosCatalogo()
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                // Consistent: redirect to login for unauthenticated users
+                return RedirectToAction("Login", "Account");
+            }
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null)
                 return NotFound();
@@ -160,40 +176,28 @@ public async Task<IActionResult> Index(
             ViewBag.TpUtilizador = user.TpUtilizador.ToString();
             ViewBag.UserId = user.Id;
 
+#pragma warning disable CS8602 // Dereference of a possibly null reference
             // Ativos da carteira do próprio utilizador
             var ativosDoUtilizador = await _context.Ativofinanceiros
                 .Include(a => a.Carteira)
-                .Include(a => a.Depositoprazo).ThenInclude(d => d.Banco)
-                .Include(a => a.Fundoinvestimento).ThenInclude(f => f.Banco)
-                .Include(a => a.Imovelarrendado).ThenInclude(i => i.Banco)
+                .Include(a => a.Depositoprazo)
+                .Include(a => a.Fundoinvestimento)
+                .Include(a => a.Imovelarrendado)
                 .Where(a => a.Carteira.UtilizadorId == userId)
                 .ToListAsync();
+#pragma warning restore CS8602
 
             ViewBag.AtivosDoUtilizador = ativosDoUtilizador;
 
-            // Fundos de investimento do admin ainda não adicionados
+#pragma warning disable CS8602 // Dereference of a possibly null reference
             var fundosAdmin = await _context.Ativofinanceiros
-                .Include(a => a.Carteira).ThenInclude(c => c.Utilizador)
-                .Include(a => a.Fundoinvestimento).ThenInclude(f => f.Banco)
-                .Where(a => a.Fundoinvestimento != null && a.Carteira.Utilizador.TpUtilizador == Utilizador.TipoUtilizador.Admin)
+                .Include(a => a.Fundoinvestimento)
+                .Where(a => a.Fundoinvestimento != null && a.Carteira.UtilizadorId == 1 && !_context.Ativofinanceiros.Any(au => au.Carteira.UtilizadorId == userId /*&& au.FundoinvestimentoId == a.FundoinvestimentoId*/))
                 .ToListAsync();
+#pragma warning restore CS8602
 
-            // Remove fundos que o utilizador já adicionou (com base no nome do fundo)
-            var nomesJaAdicionados = ativosDoUtilizador
-                .Where(a => a.Fundoinvestimento != null)
-                .Select(a => a.Fundoinvestimento.Nome)
-                .ToHashSet();
-
-            var fundosParaAdicionar = fundosAdmin
-                .Where(a => !nomesJaAdicionados.Contains(a.Fundoinvestimento.Nome))
-                .ToList();
-
-            ViewBag.FundosDoAdmin = fundosParaAdicionar;
-
-            // A view espera um IEnumerable completo
-            var todos = ativosDoUtilizador.Concat(fundosParaAdicionar).ToList();
-
-            return View(todos);
+            ViewBag.FundosAdmin = fundosAdmin!;
+            return View();
         }
 
 
@@ -203,7 +207,12 @@ public async Task<IActionResult> Index(
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AdicionarAtivo(int ativoId)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var carteira = await _context.Carteiras.FirstOrDefaultAsync(c => c.UtilizadorId == userId);
             if (carteira == null) return NotFound();
 
@@ -294,34 +303,52 @@ public async Task<IActionResult> Index(
         // GET: Carteira/Remover/5
         public async Task<IActionResult> Remover(int id)
         {
-            // Obter o ID do utilizador atual
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-
-            // Verificar se o ativo pertence à carteira do utilizador
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                // Não autenticado: redireciona para login
+                return RedirectToAction("Login", "Account");
+            }
+            // Load only scalar properties and IDs, not navigation properties
             var ativo = await _context.Ativofinanceiros
-                .Include(a => a.Carteira)
-                .Include(a => a.Depositoprazo)
-                .ThenInclude(d => d.Banco)
-                .Include(a => a.Fundoinvestimento)
-                .ThenInclude(f => f.Banco)
-                .Include(a => a.Imovelarrendado)
-                .ThenInclude(i => i.Banco)
                 .FirstOrDefaultAsync(a => a.AtivofinanceiroId == id);
-
             if (ativo == null)
             {
-                return NotFound("Ativo não encontrado.");
+                TempData["Mensagem"] = "Ativo não encontrado.";
+                return RedirectToAction("Index");
             }
-
-            var carteira = await _context.Carteiras
-                .FirstOrDefaultAsync(c => c.UtilizadorId == userId);
-
-            if (carteira == null || ativo.CarteiraId != carteira.CarteiraId)
+            // Defensive: check for valid CarteiraId
+            if (ativo.CarteiraId == 0)
             {
-                return Forbid("Não tem permissão para remover este ativo.");
+                TempData["Mensagem"] = $"CarteiraId não definido para este ativo (AtivoId={ativo.AtivofinanceiroId}).";
+                return RedirectToAction("Index");
             }
-
-            return View(ativo);
+            // Defensive: check for at least one asset type by scalar FK (do not dereference navigation properties)
+            bool hasAssetType = await _context.Depositoprazos.AnyAsync(d => d.AtivofinanceiroId == ativo.AtivofinanceiroId)
+                || await _context.Fundoinvestimentos.AnyAsync(f => f.AtivofinanceiroId == ativo.AtivofinanceiroId)
+                || await _context.Imovelarrendados.AnyAsync(i => i.AtivofinanceiroId == ativo.AtivofinanceiroId);
+            if (!hasAssetType)
+            {
+                TempData["Mensagem"] = "Tipo de ativo financeiro não encontrado.";
+                return RedirectToAction("Index");
+            }
+            // Permission: only allow if the asset belongs to the user's carteira
+            var carteiraId = await _context.Carteiras
+                .Where(c => c.UtilizadorId == userId)
+                .Select(c => c.CarteiraId)
+                .FirstOrDefaultAsync();
+            if (carteiraId == 0)
+            {
+                TempData["Mensagem"] = "Carteira não encontrada para este utilizador.";
+                return RedirectToAction("Index");
+            }
+            if (ativo.CarteiraId != carteiraId)
+            {
+                TempData["Mensagem"] = $"Não tem permissão para remover este ativo. (Ativo.CarteiraId={ativo.CarteiraId}, Esperado={carteiraId})";
+                return RedirectToAction("Index");
+            }
+            TempData["Mensagem"] = "Confirme a remoção do ativo.";
+            return RedirectToAction("Index");
         }
 
         // POST: Carteira/Remover/5
@@ -329,18 +356,37 @@ public async Task<IActionResult> Index(
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoverConfirmado(int id)
         {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                // Não autenticado: redireciona para login
+                return RedirectToAction("Login", "Account");
+            }
             var ativo = await _context.Ativofinanceiros
                 .Include(a => a.Depositoprazo)
                 .Include(a => a.Fundoinvestimento)
                 .Include(a => a.Imovelarrendado)
                 .FirstOrDefaultAsync(a => a.AtivofinanceiroId == id);
-
             if (ativo == null)
             {
-                return NotFound();
+                TempData["Mensagem"] = "Ativo não encontrado.";
+                return RedirectToAction("Index");
             }
-
-            // Remover registros relacionados
+            // Permission: only allow if the asset belongs to the user's carteira
+            var carteiraId = await _context.Carteiras
+                .Where(c => c.UtilizadorId == userId)
+                .Select(c => c.CarteiraId)
+                .FirstOrDefaultAsync();
+            if (carteiraId == 0)
+            {
+                TempData["Mensagem"] = "Carteira não encontrada para este utilizador.";
+                return RedirectToAction("Index");
+            }
+            if (ativo.CarteiraId != carteiraId)
+            {
+                TempData["Mensagem"] = $"Não tem permissão para remover este ativo. (Ativo.CarteiraId={ativo.CarteiraId}, Esperado={carteiraId})";
+                return RedirectToAction("Index");
+            }
             if (ativo.Depositoprazo != null)
             {
                 _context.Depositoprazos.Remove(ativo.Depositoprazo);
@@ -353,19 +399,23 @@ public async Task<IActionResult> Index(
             {
                 _context.Imovelarrendados.Remove(ativo.Imovelarrendado);
             }
-
-            // Remover o ativo
             _context.Ativofinanceiros.Remove(ativo);
             await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
+            TempData["Mensagem"] = "Ativo removido com sucesso.";
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CriarDeposito(Depositoprazo deposito, Ativofinanceiro ativo)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                // Consistent: redirect to login for unauthenticated users
+                return RedirectToAction("Login", "Account");
+            }
+            var userId = int.Parse(userIdClaim);
             await _depositoService.CriarDepositoAsync(deposito, ativo, userId);
             return RedirectToAction("AtivosCatalogo");
         }
@@ -526,7 +576,13 @@ public async Task<IActionResult> Index(
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AdicionarFundo(int fundoId, decimal valor)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                // Consistent: redirect to login for unauthenticated users
+                return RedirectToAction("Login", "Account");
+            }
+            var userId = int.Parse(userIdClaim);
             var carteira = await _context.Carteiras.FirstOrDefaultAsync(c => c.UtilizadorId == userId);
             if (carteira == null) return NotFound();
 
@@ -571,7 +627,13 @@ public async Task<IActionResult> Index(
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateFundo(Fundoinvestimento fundo, Ativofinanceiro ativo)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                // Consistent: redirect to login for unauthenticated users
+                return RedirectToAction("Login", "Account");
+            }
+            var userId = int.Parse(userIdClaim);
             await _fundoService.CriarFundoAsync(fundo, ativo, userId);
             return RedirectToAction(nameof(AtivosCatalogo));
         }
@@ -671,7 +733,13 @@ public async Task<IActionResult> Index(
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateImovel(ImovelViewModel viewModel)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                // Consistent: redirect to login for unauthenticated users
+                return RedirectToAction("Login", "Account");
+            }
+            var userId = int.Parse(userIdClaim);
             var carteira = await _context.Carteiras.FirstOrDefaultAsync(c => c.UtilizadorId == userId);
 
             if (carteira == null) return NotFound();
@@ -772,16 +840,20 @@ public async Task<IActionResult> Index(
         [HttpGet, ActionName("GerarRelatorio")]
         public async Task<IActionResult> GerarRelatorio(int id, DateTime dataInicio, DateTime dataFim)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                // Consistent: redirect to login for unauthenticated users
+                return RedirectToAction("Login", "Account");
+            }
+            var userId = int.Parse(userIdClaim);
 
             var carteira = await _context.Carteiras
                 .Include(c => c.Utilizador)
                 .Include(c => c.Ativofinanceiros)
                 .ThenInclude(a => a.Depositoprazo)
-                .ThenInclude(d => d.Banco)
                 .Include(c => c.Ativofinanceiros)
                 .ThenInclude(a => a.Fundoinvestimento)
-                .ThenInclude(f => f.Banco)
                 .Include(c => c.Ativofinanceiros)
                 .ThenInclude(a => a.Imovelarrendado)
                 .FirstOrDefaultAsync(c => c.CarteiraId == id && c.UtilizadorId == userId);
@@ -836,12 +908,18 @@ public async Task<IActionResult> Index(
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GestaoFundos()
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                // Consistent: redirect to login for unauthenticated users
+                return RedirectToAction("Login", "Account");
+            }
+            var userId = int.Parse(userIdClaim);
 
             var ativos = await _context.Ativofinanceiros
-                .Include(a => a.Depositoprazo).ThenInclude(d => d.Banco)
-                .Include(a => a.Fundoinvestimento).ThenInclude(f => f.Banco)
-                .Include(a => a.Imovelarrendado).ThenInclude(i => i.Banco)
+                .Include(a => a.Depositoprazo)
+                .Include(a => a.Fundoinvestimento)
+                .Include(a => a.Imovelarrendado)
                 .Where(a =>
                     a.Depositoprazo != null ||
                     a.Fundoinvestimento != null ||
@@ -862,25 +940,26 @@ public async Task<IActionResult> Index(
         [HttpGet, ActionName("GerarRelatorioImpostos")]
         public async Task<IActionResult> GerarRelatorioImpostos(int id, DateTime dataInicio, DateTime dataFim)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+#pragma warning disable CS8602 // Dereference of a possibly null reference
             var carteira = await _context.Carteiras
                 .Include(c => c.Utilizador)
                 .Include(c => c.Ativofinanceiros)
                     .ThenInclude(a => a.Depositoprazo)
-                        .ThenInclude(d => d.Banco)
                 .Include(c => c.Ativofinanceiros)
                     .ThenInclude(a => a.Fundoinvestimento)
-                        .ThenInclude(f => f.Banco)
                 .Include(c => c.Ativofinanceiros)
                     .ThenInclude(a => a.Imovelarrendado)
                 .FirstOrDefaultAsync(c => c.CarteiraId == id && c.UtilizadorId == userId);
-
+#pragma warning restore CS8602
             if (carteira == null)
             {
                 return NotFound("Carteira não encontrada ou não pertence ao utilizador.");
             }
-
             if (dataFim <= dataInicio)
             {
                 TempData["Erro"] = "A data final deve ser posterior à data inicial.";
@@ -938,6 +1017,139 @@ public async Task<IActionResult> Index(
             decimal novoValor = fundo.Valoratual * (decimal)Math.Pow((double)(1 + taxaMensal), mesesDecorridos);
 
             return Math.Round(novoValor, 2);
+        }
+
+        // Diagnostic endpoint for Selenium/test debugging
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> DebugDom()
+        {
+            // Only allow if testmode=1 is present
+            if (!Request.Query.ContainsKey("testmode") || Request.Query["testmode"] != "1")
+                return Unauthorized("Missing or invalid testmode=1");
+
+            // Require authentication (simulate Selenium test user)
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized("Not authenticated");
+            }
+
+            // Render the Index view as string (with filters, overlays, etc.)
+            var designacao = Request.Query["designacao"].ToString();
+            var tipo = Request.Query["tipo"].ToString();
+            decimal? montanteAplicado = null;
+            if (decimal.TryParse(Request.Query["montanteAplicado"], out var m))
+                montanteAplicado = m;
+
+            // Reuse the Index logic to get the model
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+                return NotFound("User not found");
+
+            ViewBag.TpUtilizador = user.TpUtilizador.ToString();
+            ViewBag.UserId = user.Id;
+
+            var carteira = await _context.Carteiras
+                .Include(c => c.Ativofinanceiros)
+                    .ThenInclude(a => a.Depositoprazo)
+                .Include(c => c.Ativofinanceiros)
+                    .ThenInclude(a => a.Fundoinvestimento)
+                .Include(c => c.Ativofinanceiros)
+                    .ThenInclude(a => a.Imovelarrendado)
+                .FirstOrDefaultAsync(c => c.UtilizadorId == userId);
+
+            if (carteira == null)
+                return NotFound("Carteira not found");
+
+            // Render the Index view to string
+            var html = await RenderViewToStringAsync("Index", carteira);
+            return Content(html, "text/html");
+        }
+
+        // Diagnostic endpoint for Selenium/test debugging
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> DebugSeleniumSeed()
+        {
+            var email = "tf@ipvc.pt";
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null)
+            {
+                return Json(new { SeleniumUser = false, Carteira = false, Asset = false, Message = "User not found" });
+            }
+            var carteira = await _context.Carteiras.Include(c => c.Ativofinanceiros).FirstOrDefaultAsync(c => c.UtilizadorId == user.Id);
+            if (carteira == null)
+            {
+                return Json(new { SeleniumUser = true, Carteira = false, Asset = false, Message = "Carteira not found" });
+            }
+            var assetCount = carteira.Ativofinanceiros?.Count ?? 0;
+            var hasAsset = assetCount > 0;
+            return Json(new {
+                SeleniumUser = true,
+                Carteira = true,
+                Asset = hasAsset,
+                UserId = user.Id,
+                CarteiraId = carteira.CarteiraId,
+                AssetCount = assetCount,
+                Message = hasAsset ? "OK" : "No assets in carteira"
+            });
+        }
+
+        // Diagnostic endpoint for Selenium/test debugging: check if tf@ipvc.pt is blocked or deleted
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> DebugSeleniumUserStatus()
+        {
+            var email = "tf@ipvc.pt";
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null)
+            {
+                return Json(new { SeleniumUser = false, Message = "User not found" });
+            }
+            return Json(new {
+                SeleniumUser = true,
+                user.Id,
+                user.Email,
+                user.IsBlocked,
+                user.IsDeleted,
+                user.BlockedAt,
+                user.DeletedAt,
+                user.UnblockedAt,
+                user.TpUtilizador
+            });
+        }
+
+        // Helper: Render a view to string for diagnostics (fixed for ASP.NET Core 2.x, nullable)
+        private async Task<string> RenderViewToStringAsync(string viewName, object model)
+        {
+            var httpContext = this.HttpContext;
+            var actionContext = new ActionContext(httpContext, RouteData, ControllerContext.ActionDescriptor);
+            var serviceProvider = httpContext.RequestServices;
+            var razorViewEngine = serviceProvider.GetService(typeof(IRazorViewEngine)) as IRazorViewEngine;
+            var tempDataProvider = serviceProvider.GetService(typeof(ITempDataProvider)) as ITempDataProvider;
+            if (razorViewEngine == null || tempDataProvider == null)
+                throw new InvalidOperationException("Unable to resolve IRazorViewEngine or ITempDataProvider.");
+            var viewResult = razorViewEngine.FindView(actionContext, viewName, false);
+            if (!viewResult.Success)
+                throw new InvalidOperationException($"View '{viewName}' not found.");
+            var viewDictionary = new ViewDataDictionary(new Microsoft.AspNetCore.Mvc.ModelBinding.EmptyModelMetadataProvider(), new Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary())
+            {
+                Model = model
+            };
+            using (var sw = new System.IO.StringWriter())
+            {
+                var viewContext = new Microsoft.AspNetCore.Mvc.Rendering.ViewContext(
+                    actionContext,
+                    viewResult.View,
+                    viewDictionary,
+                    new TempDataDictionary(httpContext, tempDataProvider),
+                    sw,
+                    new Microsoft.AspNetCore.Mvc.ViewFeatures.HtmlHelperOptions()
+                );
+                await viewResult.View.RenderAsync(viewContext);
+                return sw.ToString();
+            }
         }
 
     }

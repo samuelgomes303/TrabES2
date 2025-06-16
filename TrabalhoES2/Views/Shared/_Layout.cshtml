@@ -70,9 +70,81 @@
         crossorigin="anonymous" />
   <link rel="stylesheet" href="~/sbadmin/css/sb-admin-2.min.css" />
   <link rel="stylesheet" href="~/sbadmin/vendor/fontawesome-free/css/all.min.css" />
+
+  @{
+      var testMode = Context.Request.Query.ContainsKey("testmode") || Context.Request.Cookies["testmode"] == "1";
+  }
+
+  @if (testMode)
+  {
+    <style id="testmode-css">
+      /* Hide overlays, modals, and sticky headers for Selenium test mode */
+      .modal, .modal-backdrop, .offcanvas, .offcanvas-backdrop, .toast, .toast-container,
+      [class*="modal"], [class*="backdrop"], [class*="offcanvas"], [class*="toast"] {
+        display: none !important;
+        pointer-events: none !important;
+        opacity: 0 !important;
+      }
+      .sticky-top, .sticky-sm-top, .sticky-md-top, .sticky-lg-top, .sticky-xl-top, .sticky-xxl-top {
+        position: static !important;
+      }
+      body {
+        padding-top: 0 !important;
+      }
+    </style>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Remove only overlays, modals, and sticky headers
+        const overlays = document.querySelectorAll('.modal, .modal-backdrop, .offcanvas, .offcanvas-backdrop, .toast, .toast-container');
+        overlays.forEach(el => {
+          el.style.display = 'none';
+          el.style.pointerEvents = 'none';
+          el.style.opacity = '0';
+        });
+        const stickies = document.querySelectorAll('.sticky-top, .sticky-sm-top, .sticky-md-top, .sticky-lg-top, .sticky-xl-top, .sticky-xxl-top');
+        stickies.forEach(el => {
+          el.style.position = 'static';
+        });
+      });
+    </script>
+  }
 </head>
 
 <body>
+  @{
+    var testModeQuery = Context.Request.Query["testmode"] == "1";
+    var testModeCookie = Context.Request.Cookies["testmode"] == "1";
+    var isTestMode = testModeQuery || testModeCookie;
+    var isAuthenticated = User?.Identity?.IsAuthenticated ?? false;
+  }
+  @if (testModeQuery)
+  {
+    <script>
+      document.cookie = "testmode=1; path=/";
+    </script>
+  }
+  @* --- TEMPORARY DIAGNOSTICS: Always show user/cookie info for debugging registration test --- *@
+  @* <div id="selenium-debug-always" style="background:#ffeeba;color:#856404;padding:8px 12px;border-radius:6px;margin:12px 0;font-size:0.95em;">
+    <b>[ALWAYS DEBUG]</b> Authenticated: <code>@(User?.Identity?.IsAuthenticated ?? false)</code><br />
+    Name: <code>@(User?.Identity?.Name ?? "(null)")</code><br />
+    Claims:
+    <ul style="margin-bottom:0;">
+      @foreach (var c in User?.Claims ?? Enumerable.Empty<System.Security.Claims.Claim>()) {
+        <li><b>@c.Type</b>: <code>@c.Value</code></li>
+      }
+    </ul>
+    testmode (query): <code>@Context.Request.Query["testmode"]</code><br />
+    testmode (cookie): <code>@Context.Request.Cookies["testmode"]</code>
+  </div> *@
+
+  @if (isTestMode && isAuthenticated)
+  {
+    <div id="selenium-debug-authenticated" style="background:#d1ffd1;color:#155724;padding:8px 12px;border-radius:6px;margin:12px 0;font-size:0.95em;">
+        <b>[DEBUG]</b> Selenium test mode: user authenticated as <code>@User.Identity.Name</code><br />
+        Roles: <code>@string.Join(",", User.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(c => c.Value))</code>
+    </div>
+  }
+
   <header>
     <nav class="navbar navbar-expand-sm navbar-dark">
       <div class="container">

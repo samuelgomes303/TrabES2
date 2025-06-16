@@ -37,14 +37,21 @@ public partial class projetoPraticoDbContext : IdentityDbContext<Utilizador, Ide
 
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=localhost;Database=projetoPratico;Username=postgres;Password=password;TrustServerCertificate=true");
+{
+    // Se já estiver configurado (por ex. via DI ou InMemory nos testes), não faz nada:
+    if (optionsBuilder.IsConfigured)
+        return;
+
+    throw new InvalidOperationException("Database context is not configured. Please ensure a valid connection string is provided via configuration.");
+}
+
+        
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new ApplicationUserIdentityConfiguration());
         base.OnModelCreating(modelBuilder);
-        
+
         modelBuilder
             .HasPostgresEnum("tipoativofinanceiro", new[] { "DepositoPrazo", "ImovelArrendado", "FundoInvestimento" })
             .HasPostgresEnum("tipoutilizador", new[] { "Cliente", "Admin", "UserManager" });
@@ -160,7 +167,7 @@ public partial class projetoPraticoDbContext : IdentityDbContext<Utilizador, Ide
             entity.HasOne(d => d.Banco).WithMany(p => p.Fundoinvestimentos)
                 .HasForeignKey(d => d.BancoId)
                 .HasConstraintName("fundoinvestimento_banco_id_fkey");
-            
+
             entity.Property(e => e.Quantidade)
                 .HasPrecision(10, 2)
                 .HasColumnName("quantidade")
@@ -219,14 +226,14 @@ public partial class projetoPraticoDbContext : IdentityDbContext<Utilizador, Ide
                 .HasConversion(
                     v => v.ToString(),
                     v => (Utilizador.TipoUtilizador)Enum.Parse(typeof(Utilizador.TipoUtilizador), v));
-    
+
             // Configure new fields
             entity.Property(e => e.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);
             entity.Property(e => e.IsBlocked).HasColumnName("is_blocked").HasDefaultValue(false);
             entity.Property(e => e.DeletedAt).HasColumnName("deleted_at").IsRequired(false);
             entity.Property(e => e.BlockedAt).HasColumnName("blocked_at").IsRequired(false);
             entity.Property(e => e.UnblockedAt).HasColumnName("unblocked_at").IsRequired(false);
-    
+
             // Relacionamento com a tabela Carteira
             entity.HasMany(u => u.Carteiras)
                 .WithOne(c => c.Utilizador)
@@ -246,10 +253,10 @@ public partial class projetoPraticoDbContext : IdentityDbContext<Utilizador, Ide
             entity.Property(e => e.DataCompra);
         });
 
-        
-        
+
+
         OnModelCreatingPartial(modelBuilder);
-        
+
     }
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
@@ -262,5 +269,5 @@ public class ApplicationUserIdentityConfiguration : IEntityTypeConfiguration<Uti
     }
 }
 
-    
+
 

@@ -7,20 +7,16 @@ namespace TrabalhoES2.Services
     {
         public static decimal CalcularValorAtualComJuros(Fundoinvestimento fundo, Ativofinanceiro ativo)
         {
-            if (ativo == null || fundo == null || ativo.Datainicio == null || fundo.Taxajuropdefeito <= 0 || fundo.Valoratual <= 0)
+            if (fundo == null) throw new ArgumentNullException(nameof(fundo));
+            if (ativo == null) throw new ArgumentNullException(nameof(ativo));
+            if (ativo.Duracaomeses == null || ativo.Duracaomeses == 0)
                 return fundo.Valoratual;
-
-            var dataInicio = ativo.Datainicio.Value;
-            var agora = DateTime.Now;
-            int meses = (agora.Year - dataInicio.Year) * 12 + agora.Month - dataInicio.Month;
-
-            if (meses <= 0)
-                return fundo.Valoratual;
-
-            decimal taxaMensal = fundo.Taxajuropdefeito / 100m / 12m;
-            decimal valorCalculado = fundo.Valoratual * (decimal)Math.Pow((double)(1 + taxaMensal), meses);
-
-            return Math.Round(valorCalculado, 2);
+            var anos = ativo.Duracaomeses.Value / 12.0m;
+            var taxa = fundo.Taxajuropdefeito / 100m;
+            var principal = fundo.Montanteinvestido;
+            // Juros compostos: M = P * (1 + r)^n
+            var montante = principal * (decimal)Math.Pow((double)(1 + taxa), (double)anos);
+            return Math.Round(montante, 2);
         }
     }
 }

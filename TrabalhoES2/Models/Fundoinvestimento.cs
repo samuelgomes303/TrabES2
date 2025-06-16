@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace TrabalhoES2.Models;
 
@@ -7,6 +8,7 @@ public partial class Fundoinvestimento
 {
     public int FundoinvestimentoId { get; set; }
 
+    [Required]
     public int BancoId { get; set; }
 
     public string Nome { get; set; } = null!;
@@ -21,7 +23,7 @@ public partial class Fundoinvestimento
 
     public virtual Ativofinanceiro Ativofinanceiro { get; set; } = null!;
 
-    public virtual Banco Banco { get; set; } = null!;
+    public virtual Banco Banco { get; set; } = null!; // Non-nullable, required
     
     public decimal Quantidade { get; set; }
     

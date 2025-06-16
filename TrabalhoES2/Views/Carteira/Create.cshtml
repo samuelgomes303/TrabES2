@@ -69,8 +69,11 @@
 
       <input type="hidden" name="deposito.Nrconta" value="auto" />
       <input type="hidden" name="deposito.Valoratual" value="0" />
-
-      <button type="submit" class="btn btn-primary w-100">Criar</button>
+      
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success flex-fill">Criar</button>
+        <a asp-action="AtivosCatalogo" class="btn btn-outline-secondary flex-fill">Cancelar</a>
+      </div>
     </form>
   </div>
 </div>

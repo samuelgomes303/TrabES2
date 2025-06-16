@@ -6,6 +6,8 @@ public class ImovelService
 {
     public static decimal CalcularValorAtualComRendimentos(Imovelarrendado imovel, Ativofinanceiro ativo)
     {
+        if (imovel == null) throw new ArgumentNullException(nameof(imovel));
+        if (ativo == null) throw new ArgumentNullException(nameof(ativo));
         if (ativo.Datainicio == null) return imovel.Valorimovel;
 
         var dataInicio = ativo.Datainicio.Value.ToDateTime(TimeOnly.MinValue);
@@ -26,6 +28,9 @@ public class ImovelService
     
     public static decimal CalcularExpectativaRendimentoAnual(Imovelarrendado imovel, Ativofinanceiro ativo)
     {
+        if (imovel == null) throw new ArgumentNullException(nameof(imovel));
+        if (ativo == null) throw new ArgumentNullException(nameof(ativo));
+
         var imposto = (ativo.Percimposto ?? 0m) / 100m; // imposto em percentagem convertida
 
         var receitaBruta = imovel.Valorrenda * 12;

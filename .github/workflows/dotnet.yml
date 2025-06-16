@@ -1,0 +1,57 @@
+name: .NET CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: projetoPraticoTest
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run unit/integration tests
+      env:
+        ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=projetoPraticoTest;Username=postgres;Password=postgres"
+      run: |
+        dotnet test TrabalhoES2.Tests/TrabalhoES2.Tests.csproj --no-build --configuration Release
+
+    - name: Run UI tests
+      # Para UI tests com Selenium: precisamos rodar a aplicação e ChromeDriver/headless
+      run: |
+        # Build e run em background:
+        dotnet run --project TrabalhoES2/TrabalhoES2.csproj --urls http://localhost:5168 &
+        APP_PID=$!
+        # Aguarda aplicação subir (pode ajustar como necessário):
+        sleep 10
+        # Executa UI tests:
+        dotnet test TrabalhoES2.UITests/TrabalhoES2.UITests.csproj --no-build --configuration Release
+        kill $APP_PID

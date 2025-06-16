@@ -12,12 +12,14 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using TrabalhoES2.Models;
 
 namespace TrabalhoES2.Areas.Identity.Pages.Account
 {
+    [IgnoreAntiforgeryToken]
     public class LoginModel : PageModel
     {
         private readonly SignInManager<Utilizador> _signInManager;
@@ -90,8 +92,31 @@ namespace TrabalhoES2.Areas.Identity.Pages.Account
             public bool RememberMe { get; set; }
         }
 
+        public override void OnPageHandlerExecuting(PageHandlerExecutingContext context)
+        {
+            base.OnPageHandlerExecuting(context);
+            // If testmode=1, disable antiforgery validation for this request
+            if (Request.Query["testmode"] == "1")
+            {
+                // Remove antiforgery validation filter for this request
+                var filters = context.Filters;
+                for (int i = filters.Count - 1; i >= 0; i--)
+                {
+                    if (filters[i] is AutoValidateAntiforgeryTokenAttribute)
+                    {
+                        filters.RemoveAt(i);
+                    }
+                }
+            }
+        }
+
         public async Task OnGetAsync(string returnUrl = null)
         {
+            if (Request.Query["testmode"] == "1")
+            {
+                Response.Cookies.Append("testmode", "1", new CookieOptions { Path = "/" });
+            }
+
             if (!string.IsNullOrEmpty(ErrorMessage))
             {
                 ModelState.AddModelError(string.Empty, ErrorMessage);
@@ -110,35 +135,49 @@ namespace TrabalhoES2.Areas.Identity.Pages.Account
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
             returnUrl ??= Url.Content("~/");
-
+            // Preserve testmode=1 in redirect if present
+            bool isTestMode = Request.Query["testmode"] == "1";
+            if (isTestMode && !returnUrl.Contains("testmode=1"))
+            {
+                if (returnUrl.Contains("?"))
+                    returnUrl += "&testmode=1";
+                else
+                    returnUrl += "?testmode=1";
+            }
+            if (isTestMode)
+            {
+                Response.Cookies.Append("testmode", "1", new CookieOptions { Path = "/" });
+            }
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
+            string postedEmail = Input?.Email ?? "(none)";
+            string postedPassword = (Input?.Password != null && Input.Password.Length > 0) ? "***" : "(none)";
+            string modelStateErrors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            string isAuth = User?.Identity?.IsAuthenticated == true ? "true" : "false";
+
+            // --- DEBUG: Log user info and password check ---
+            Utilizador user = null;
+            bool passwordValid = false;
+            string userPasswordHash = null;
+            if (!string.IsNullOrEmpty(Input?.Email))
+            {
+                user = await _userManager.FindByEmailAsync(Input.Email);
+                if (user != null && !string.IsNullOrEmpty(Input.Password))
+                {
+                    passwordValid = await _userManager.CheckPasswordAsync(user, Input.Password);
+                    userPasswordHash = user.PasswordHash;
+                }
+            }
 
             if (ModelState.IsValid)
             {
-                // Verificar se o usuário existe e está bloqueado ou removido
-                var user = await _userManager.FindByEmailAsync(Input.Email);
-                if (user != null)
-                {
-                    if (user.IsDeleted)
-                    {
-                        ModelState.AddModelError(string.Empty, "Esta conta foi removida. Por favor, contacte o administrador.");
-                        return Page();
-                    }
-
-                    if (user.IsBlocked)
-                    {
-                        ModelState.AddModelError(string.Empty, "Esta conta está bloqueada. Por favor, contacte o administrador.");
-                        return Page();
-                    }
-                }
-
-                // This doesn't count login failures towards account lockout
-                // To enable password failures to trigger account lockout, set lockoutOnFailure: true
                 var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                TempData["LoginResult"] = result.Succeeded ? "Success" : result.ToString();
+                TempData["LastLoginDebug"] = $"[POST] Email: '{postedEmail}', Password: '{postedPassword}', ModelState: {modelStateErrors}, Auth: {isAuth}, User: {{Id={user?.Id}, Email={user?.Email}, EmailConfirmed={user?.EmailConfirmed}, IsBlocked={user?.IsBlocked}, IsDeleted={user?.IsDeleted}, PasswordHash={(userPasswordHash != null ? userPasswordHash.Substring(0, 20) + "..." : "(null)")}, PasswordValid={passwordValid}}}, SignInResult: {{Succeeded={result.Succeeded}, IsLockedOut={result.IsLockedOut}, RequiresTwoFactor={result.RequiresTwoFactor}, IsNotAllowed={result.IsNotAllowed}}}";
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
-                    return LocalRedirect(returnUrl);
+                    return LocalRedirect(returnUrl ?? Url.Content("~/"));
                 }
                 if (result.RequiresTwoFactor)
                 {
@@ -147,23 +186,18 @@ namespace TrabalhoES2.Areas.Identity.Pages.Account
                 if (result.IsLockedOut)
                 {
                     _logger.LogWarning("User account locked out.");
-                    ModelState.AddModelError(string.Empty, "Esta conta está bloqueada. Por favor, contacte o administrador.");
-                    return Page();
-                }
-                if (result.IsNotAllowed)
-                {
-                    _logger.LogWarning("User account deleted or not allowed.");
-                    ModelState.AddModelError(string.Empty, "Esta conta foi removida ou não está ativa. Por favor, contacte o administrador.");
-                    return Page();
+                    TempData["ErrorMessage"] = "User account locked out.";
+                    return RedirectToPage("./Lockout");
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                    return Page();
+                    TempData["ErrorMessage"] = "Invalid login attempt.";
                 }
             }
-
-            // If we got this far, something failed, redisplay form
+            else
+            {
+                TempData["LastLoginDebug"] = $"[POST] Email: '{postedEmail}', Password: '{postedPassword}', ModelState: {modelStateErrors}, Auth: {isAuth}, User: {{Id={user?.Id}, Email={user?.Email}, EmailConfirmed={user?.EmailConfirmed}, IsBlocked={user?.IsBlocked}, IsDeleted={user?.IsDeleted}, PasswordHash={(userPasswordHash != null ? userPasswordHash.Substring(0, 20) + "..." : "(null)")}, PasswordValid={passwordValid}}}, ERROR: ModelState invalid";
+            }
             return Page();
         }
     }

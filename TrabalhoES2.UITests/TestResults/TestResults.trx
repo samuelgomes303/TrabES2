@@ -1,0 +1,246 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="b3f654b9-9f81-44cd-992b-fb508b904ea8" name="tiagu@TIAGOFERREIRA 2025-06-15 22:37:59" runUser="TIAGOFERREIRA\tiagu" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-06-15T22:37:59.2027592+01:00" queuing="2025-06-15T22:37:59.2027597+01:00" start="2025-06-15T22:37:49.8723564+01:00" finish="2025-06-15T22:38:34.4934675+01:00" />
+  <TestSettings name="default" id="d11ec617-ea2e-4afe-b472-c2ace090fe13">
+    <Deployment runDeploymentRoot="tiagu_TIAGOFERREIRA_2025-06-15_22_37_59" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="9616d342-45a6-4b5e-909d-8ad346e262bf" testId="260d4b1a-89d8-ac0e-769a-3981d911d180" testName="Login_WithValidCredentials_RedirectsToHome" computerName="TIAGOFERREIRA" duration="00:00:04.7079050" startTime="2025-06-15T22:38:10.2727678+01:00" endTime="2025-06-15T22:38:14.9806716+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9616d342-45a6-4b5e-909d-8ad346e262bf">
+      <Output>
+        <StdOut>[DIAG] Field values before submit: {"email":"tf@ipvc.pt","password":"Piruças123#"}&#xD;
+[DIAG] Screenshot before submit: screenshot_before_submit_20250615_223812_257.png, DOM: dom_before_submit_20250615_223812_257.html&#xD;
+[DIAG] Click intercepted on 'login' at 206,561 size 334x50&#xD;
+[DIAG] Screenshot: screenshot_login_20250615_223813_437.png, DOM: dom_login_20250615_223813_437.html&#xD;
+[DIAG] Current URL after form submission: http://localhost:5168/&#xD;
+[DIAG] Page source dumped to: page_after_login_20250615_223814_829.html&#xD;
+[DIAG] Redirected away from login page - login may have succeeded</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="23e59ef4-d21b-431b-b99f-517ea58a073b" testId="26e1fdb5-7605-b192-5325-59c650dba1f0" testName="FiltrarPorTipo_ServerSide_RetornaApenasDepositoPrazo" computerName="TIAGOFERREIRA" duration="00:00:05.3727280" startTime="2025-06-15T22:38:04.8999815+01:00" endTime="2025-06-15T22:38:10.2727088+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="23e59ef4-d21b-431b-b99f-517ea58a073b">
+      <Output>
+        <StdOut>[DIAG] Field values before submit: {"email":"tf@ipvc.pt","password":"Piruças123#"}&#xD;
+[DIAG] Screenshot before submit: screenshot_before_submit_20250615_223806_846.png, DOM: dom_before_submit_20250615_223806_846.html&#xD;
+[DIAG] Click intercepted on 'login' at 206,561 size 334x50&#xD;
+[DIAG] Screenshot: screenshot_login_20250615_223807_994.png, DOM: dom_login_20250615_223807_994.html&#xD;
+[DIAG] Current URL after form submission: http://localhost:5168/&#xD;
+[DIAG] Page source dumped to: page_after_login_20250615_223809_415.html&#xD;
+[DIAG] Redirected away from login page - login may have succeeded</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="533b7f9d-d6e1-45f7-aace-3de8dd76a2a4" testId="c122568e-99d2-e3ee-48aa-13b0105c8911" testName="Login_WithInvalidCredentials_ShowsError" computerName="TIAGOFERREIRA" duration="00:00:02.0389830" startTime="2025-06-15T22:38:30.3066225+01:00" endTime="2025-06-15T22:38:32.3456047+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="533b7f9d-d6e1-45f7-aace-3de8dd76a2a4" />
+    <UnitTestResult executionId="7a2c18f6-f6c4-412d-838f-39292732b48e" testId="ed177349-2bc8-f129-2a79-745177194bdc" testName="FiltrarPorMontante_ServerSide" computerName="TIAGOFERREIRA" duration="00:00:05.7400290" startTime="2025-06-15T22:37:59.1595225+01:00" endTime="2025-06-15T22:38:04.8995507+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7a2c18f6-f6c4-412d-838f-39292732b48e">
+      <Output>
+        <StdOut>[DIAG] Field values before submit: {"email":"tf@ipvc.pt","password":"Piruças123#"}&#xD;
+[DIAG] Screenshot before submit: screenshot_before_submit_20250615_223801_257.png, DOM: dom_before_submit_20250615_223801_257.html&#xD;
+[DIAG] Click intercepted on 'login' at 206,561 size 334x50&#xD;
+[DIAG] Screenshot: screenshot_login_20250615_223802_477.png, DOM: dom_login_20250615_223802_477.html&#xD;
+[DIAG] Current URL after form submission: http://localhost:5168/&#xD;
+[DIAG] Page source dumped to: page_after_login_20250615_223804_056.html&#xD;
+[DIAG] Redirected away from login page - login may have succeeded</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="f22c2a23-050b-4244-a6a5-413bad18283d" testId="b926c4fd-1af7-a249-d3e3-0b8c2cd228ac" testName="FiltrarPorDesignacao_ClientSide_HidesNonMatchingRows" computerName="TIAGOFERREIRA" duration="00:00:08.6597820" startTime="2025-06-15T22:37:50.4988762+01:00" endTime="2025-06-15T22:37:59.1586119+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f22c2a23-050b-4244-a6a5-413bad18283d">
+      <Output>
+        <StdOut>[DIAG] Field values before submit: {"email":"tf@ipvc.pt","password":"Piruças123#"}&#xD;
+[DIAG] Screenshot before submit: screenshot_before_submit_20250615_223755_158.png, DOM: dom_before_submit_20250615_223755_158.html&#xD;
+[DIAG] Click intercepted on 'login' at 206,561 size 334x50&#xD;
+[DIAG] Screenshot: screenshot_login_20250615_223756_406.png, DOM: dom_login_20250615_223756_406.html&#xD;
+[DIAG] Current URL after form submission: http://localhost:5168/&#xD;
+[DIAG] Page source dumped to: page_after_login_20250615_223758_387.html&#xD;
+[DIAG] Redirected away from login page - login may have succeeded</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="2e09f7e1-93b6-4aaa-b87a-61b7bb86813d" testId="f4b9cf91-2b22-27c9-d701-d8530a246dce" testName="Logout_AfterLogin_ReturnsToLoginPage" computerName="TIAGOFERREIRA" duration="00:00:04.9635650" startTime="2025-06-15T22:38:14.9807229+01:00" endTime="2025-06-15T22:38:19.9442867+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2e09f7e1-93b6-4aaa-b87a-61b7bb86813d">
+      <Output>
+        <StdOut>[DIAG] Field values before submit: {"email":"tf@ipvc.pt","password":"Piruças123#"}&#xD;
+[DIAG] Screenshot before submit: screenshot_before_submit_20250615_223816_949.png, DOM: dom_before_submit_20250615_223816_949.html&#xD;
+[DIAG] Click intercepted on 'login' at 206,561 size 334x50&#xD;
+[DIAG] Screenshot: screenshot_login_20250615_223818_127.png, DOM: dom_login_20250615_223818_127.html&#xD;
+[DIAG] Current URL after form submission: http://localhost:5168/&#xD;
+[DIAG] Page source dumped to: page_after_login_20250615_223819_407.html&#xD;
+[DIAG] Redirected away from login page - login may have succeeded</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="50fcfd9f-b3a6-4229-baab-4b7b8e0866c9" testId="559428b5-910d-9765-564e-3b90ff745fd4" testName="Register_WithMismatchedPasswords_ShowsValidationError" computerName="TIAGOFERREIRA" duration="00:00:02.0789160" startTime="2025-06-15T22:38:32.3456607+01:00" endTime="2025-06-15T22:38:34.4245758+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="50fcfd9f-b3a6-4229-baab-4b7b8e0866c9" />
+    <UnitTestResult executionId="588a9c3e-8102-495f-8e75-bcfc81d88fa8" testId="eda85cac-4bd9-3e3e-c2b9-51e6721f388e" testName="FiltrarPorTipo_ServerSide_FullPageReload" computerName="TIAGOFERREIRA" duration="00:00:00.0002950" startTime="2025-06-15T22:38:04.8996117+01:00" endTime="2025-06-15T22:38:04.8999062+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="588a9c3e-8102-495f-8e75-bcfc81d88fa8">
+      <Output>
+        <StdOut>Server-side type filtering does a full postback; consider a dedicated controller test instead.</StdOut>
+        <ErrorInfo>
+          <Message>Server-side type filtering does a full postback; consider a dedicated controller test instead.</Message>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="dfbec398-c7d7-45c4-8afb-26b44800dd85" testId="aa3d1e95-e1f1-d306-c7d7-37992c58240e" testName="Test1" computerName="TIAGOFERREIRA" duration="00:00:00.0125830" startTime="2025-06-15T22:38:34.4250761+01:00" endTime="2025-06-15T22:38:34.4376588+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dfbec398-c7d7-45c4-8afb-26b44800dd85" />
+    <UnitTestResult executionId="436b2ce2-1612-40e9-83f5-2002f5449247" testId="7956d2df-9631-019a-8c49-c2415b2f0f23" testName="Register_WithValidData_SucceedsAndAllowsLogin" computerName="TIAGOFERREIRA" duration="00:00:10.3594360" startTime="2025-06-15T22:38:19.9443454+01:00" endTime="2025-06-15T22:38:30.3037801+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="436b2ce2-1612-40e9-83f5-2002f5449247">
+      <Output>
+        <StdOut>[DIAG] Field values before submit: {"email":"tf@ipvc.pt","password":"Piruças123#"}&#xD;
+[DIAG] Screenshot before submit: screenshot_before_submit_20250615_223821_922.png, DOM: dom_before_submit_20250615_223821_922.html&#xD;
+[DIAG] Click intercepted on 'login' at 206,561 size 334x50&#xD;
+[DIAG] Screenshot: screenshot_login_20250615_223823_059.png, DOM: dom_login_20250615_223823_059.html&#xD;
+[DIAG] Current URL after form submission: http://localhost:5168/&#xD;
+[DIAG] Page source dumped to: page_after_login_20250615_223824_477.html&#xD;
+[DIAG] Redirected away from login page - login may have succeeded&#xD;
+[DIAG] [RegisterTest] Anti-forgery token on login page: CfDJ8IOgf__P4gJPpS9QBhgskkfqRloIzqqh-uHtvMi0NGRg3c90Rjhzd5UKjxRQCQdKItHBnY4pAX0qHln3bRB5xKtxgR4kfD3bM74JYBSDe3ao6WP66Ve7fBWoqjPBFsoKVJ-k2h3bgjubjJoHtvUYS9Q&#xD;
+[DIAG] [RegisterTest] Field values before submit: {"email":"ui638856239056715330@example.com","password":"Password123!"}&#xD;
+[DIAG] [RegisterTest] Screenshot before submit: C:\Users\tiagu\TrabES2\TrabalhoES2.UITests\bin\Debug\net9.0\TestResults\register_login_before_submit_20250615_223829_209.png, DOM: register_login_before_submit_20250615_223829_209.html</StdOut>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Register_WithValidData_SucceedsAndAllowsLogin" storage="c:\users\tiagu\trabes2\trabalhoes2.uitests\bin\debug\net9.0\trabalhoes2.uitests.dll" id="7956d2df-9631-019a-8c49-c2415b2f0f23">
+      <Execution id="436b2ce2-1612-40e9-83f5-2002f5449247" />
+      <TestMethod codeBase="C:\Users\tiagu\TrabES2\TrabalhoES2.UITests\bin\Debug\net9.0\TrabalhoES2.UITests.dll" adapterTypeName="executor://nunit3testexecutor/" className="TrabalhoES2.UITests.CarteiraFilterTests" name="Register_WithValidData_SucceedsAndAllowsLogin" />
+    </UnitTest>
+    <UnitTest name="Register_WithMismatchedPasswords_ShowsValidationError" storage="c:\users\tiagu\trabes2\trabalhoes2.uitests\bin\debug\net9.0\trabalhoes2.uitests.dll" id="559428b5-910d-9765-564e-3b90ff745fd4">
+      <Execution id="50fcfd9f-b3a6-4229-baab-4b7b8e0866c9" />
+      <TestMethod codeBase="C:\Users\tiagu\TrabES2\TrabalhoES2.UITests\bin\Debug\net9.0\TrabalhoES2.UITests.dll" adapterTypeName="executor://nunit3testexecutor/" className="TrabalhoES2.UITests.LoginAndRegisterTests" name="Register_WithMismatchedPasswords_ShowsValidationError" />
+    </UnitTest>
+    <UnitTest name="Logout_AfterLogin_ReturnsToLoginPage" storage="c:\users\tiagu\trabes2\trabalhoes2.uitests\bin\debug\net9.0\trabalhoes2.uitests.dll" id="f4b9cf91-2b22-27c9-d701-d8530a246dce">
+      <Execution id="2e09f7e1-93b6-4aaa-b87a-61b7bb86813d" />
+      <TestMethod codeBase="C:\Users\tiagu\TrabES2\TrabalhoES2.UITests\bin\Debug\net9.0\TrabalhoES2.UITests.dll" adapterTypeName="executor://nunit3testexecutor/" className="TrabalhoES2.UITests.CarteiraFilterTests" name="Logout_AfterLogin_ReturnsToLoginPage" />
+    </UnitTest>
+    <UnitTest name="FiltrarPorTipo_ServerSide_FullPageReload" storage="c:\users\tiagu\trabes2\trabalhoes2.uitests\bin\debug\net9.0\trabalhoes2.uitests.dll" id="eda85cac-4bd9-3e3e-c2b9-51e6721f388e">
+      <Execution id="588a9c3e-8102-495f-8e75-bcfc81d88fa8" />
+      <TestMethod codeBase="C:\Users\tiagu\TrabES2\TrabalhoES2.UITests\bin\Debug\net9.0\TrabalhoES2.UITests.dll" adapterTypeName="executor://nunit3testexecutor/" className="TrabalhoES2.UITests.CarteiraFilterTests" name="FiltrarPorTipo_ServerSide_FullPageReload" />
+    </UnitTest>
+    <UnitTest name="FiltrarPorTipo_ServerSide_RetornaApenasDepositoPrazo" storage="c:\users\tiagu\trabes2\trabalhoes2.uitests\bin\debug\net9.0\trabalhoes2.uitests.dll" id="26e1fdb5-7605-b192-5325-59c650dba1f0">
+      <Execution id="23e59ef4-d21b-431b-b99f-517ea58a073b" />
+      <TestMethod codeBase="C:\Users\tiagu\TrabES2\TrabalhoES2.UITests\bin\Debug\net9.0\TrabalhoES2.UITests.dll" adapterTypeName="executor://nunit3testexecutor/" className="TrabalhoES2.UITests.CarteiraFilterTests" name="FiltrarPorTipo_ServerSide_RetornaApenasDepositoPrazo" />
+    </UnitTest>
+    <UnitTest name="FiltrarPorDesignacao_ClientSide_HidesNonMatchingRows" storage="c:\users\tiagu\trabes2\trabalhoes2.uitests\bin\debug\net9.0\trabalhoes2.uitests.dll" id="b926c4fd-1af7-a249-d3e3-0b8c2cd228ac">
+      <Execution id="f22c2a23-050b-4244-a6a5-413bad18283d" />
+      <TestMethod codeBase="C:\Users\tiagu\TrabES2\TrabalhoES2.UITests\bin\Debug\net9.0\TrabalhoES2.UITests.dll" adapterTypeName="executor://nunit3testexecutor/" className="TrabalhoES2.UITests.CarteiraFilterTests" name="FiltrarPorDesignacao_ClientSide_HidesNonMatchingRows" />
+    </UnitTest>
+    <UnitTest name="Login_WithValidCredentials_RedirectsToHome" storage="c:\users\tiagu\trabes2\trabalhoes2.uitests\bin\debug\net9.0\trabalhoes2.uitests.dll" id="260d4b1a-89d8-ac0e-769a-3981d911d180">
+      <Execution id="9616d342-45a6-4b5e-909d-8ad346e262bf" />
+      <TestMethod codeBase="C:\Users\tiagu\TrabES2\TrabalhoES2.UITests\bin\Debug\net9.0\TrabalhoES2.UITests.dll" adapterTypeName="executor://nunit3testexecutor/" className="TrabalhoES2.UITests.CarteiraFilterTests" name="Login_WithValidCredentials_RedirectsToHome" />
+    </UnitTest>
+    <UnitTest name="Login_WithInvalidCredentials_ShowsError" storage="c:\users\tiagu\trabes2\trabalhoes2.uitests\bin\debug\net9.0\trabalhoes2.uitests.dll" id="c122568e-99d2-e3ee-48aa-13b0105c8911">
+      <Execution id="533b7f9d-d6e1-45f7-aace-3de8dd76a2a4" />
+      <TestMethod codeBase="C:\Users\tiagu\TrabES2\TrabalhoES2.UITests\bin\Debug\net9.0\TrabalhoES2.UITests.dll" adapterTypeName="executor://nunit3testexecutor/" className="TrabalhoES2.UITests.LoginAndRegisterTests" name="Login_WithInvalidCredentials_ShowsError" />
+    </UnitTest>
+    <UnitTest name="Test1" storage="c:\users\tiagu\trabes2\trabalhoes2.uitests\bin\debug\net9.0\trabalhoes2.uitests.dll" id="aa3d1e95-e1f1-d306-c7d7-37992c58240e">
+      <Execution id="dfbec398-c7d7-45c4-8afb-26b44800dd85" />
+      <TestMethod codeBase="C:\Users\tiagu\TrabES2\TrabalhoES2.UITests\bin\Debug\net9.0\TrabalhoES2.UITests.dll" adapterTypeName="executor://nunit3testexecutor/" className="TrabalhoES2.UITests.Tests" name="Test1" />
+    </UnitTest>
+    <UnitTest name="FiltrarPorMontante_ServerSide" storage="c:\users\tiagu\trabes2\trabalhoes2.uitests\bin\debug\net9.0\trabalhoes2.uitests.dll" id="ed177349-2bc8-f129-2a79-745177194bdc">
+      <Execution id="7a2c18f6-f6c4-412d-838f-39292732b48e" />
+      <TestMethod codeBase="C:\Users\tiagu\TrabES2\TrabalhoES2.UITests\bin\Debug\net9.0\TrabalhoES2.UITests.dll" adapterTypeName="executor://nunit3testexecutor/" className="TrabalhoES2.UITests.CarteiraFilterTests" name="FiltrarPorMontante_ServerSide" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="260d4b1a-89d8-ac0e-769a-3981d911d180" executionId="9616d342-45a6-4b5e-909d-8ad346e262bf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="26e1fdb5-7605-b192-5325-59c650dba1f0" executionId="23e59ef4-d21b-431b-b99f-517ea58a073b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c122568e-99d2-e3ee-48aa-13b0105c8911" executionId="533b7f9d-d6e1-45f7-aace-3de8dd76a2a4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ed177349-2bc8-f129-2a79-745177194bdc" executionId="7a2c18f6-f6c4-412d-838f-39292732b48e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b926c4fd-1af7-a249-d3e3-0b8c2cd228ac" executionId="f22c2a23-050b-4244-a6a5-413bad18283d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f4b9cf91-2b22-27c9-d701-d8530a246dce" executionId="2e09f7e1-93b6-4aaa-b87a-61b7bb86813d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="559428b5-910d-9765-564e-3b90ff745fd4" executionId="50fcfd9f-b3a6-4229-baab-4b7b8e0866c9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="eda85cac-4bd9-3e3e-c2b9-51e6721f388e" executionId="588a9c3e-8102-495f-8e75-bcfc81d88fa8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="aa3d1e95-e1f1-d306-c7d7-37992c58240e" executionId="dfbec398-c7d7-45c4-8afb-26b44800dd85" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7956d2df-9631-019a-8c49-c2415b2f0f23" executionId="436b2ce2-1612-40e9-83f5-2002f5449247" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="10" executed="9" passed="9" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>NUnit Adapter 4.6.0.0: Test execution started&#xD;
+Running all tests in C:\Users\tiagu\TrabES2\TrabalhoES2.UITests\bin\Debug\net9.0\TrabalhoES2.UITests.dll&#xD;
+   NUnit3TestExecutor discovered 10 of 10 NUnit test cases using Current Discovery mode, Non-Explicit run&#xD;
+Starting ChromeDriver 137.0.7151.70 (dfa4dc56b2abb56eb2a14cad006ea5e68c60d5de-refs/branch-heads/7151@{#1875}) on port 61648&#xD;
+Only local connections are allowed.&#xD;
+Please see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.&#xD;
+ChromeDriver was started successfully on port 61648.&#xD;
+[DIAG] Field values before submit: {"email":"tf@ipvc.pt","password":"Piruças123#"}&#xD;
+[DIAG] Screenshot before submit: screenshot_before_submit_20250615_223755_158.png, DOM: dom_before_submit_20250615_223755_158.html&#xD;
+[DIAG] Click intercepted on 'login' at 206,561 size 334x50&#xD;
+[DIAG] Screenshot: screenshot_login_20250615_223756_406.png, DOM: dom_login_20250615_223756_406.html&#xD;
+[DIAG] Current URL after form submission: http://localhost:5168/&#xD;
+[DIAG] Page source dumped to: page_after_login_20250615_223758_387.html&#xD;
+[DIAG] Redirected away from login page - login may have succeeded&#xD;
+&#xD;
+Starting ChromeDriver 137.0.7151.70 (dfa4dc56b2abb56eb2a14cad006ea5e68c60d5de-refs/branch-heads/7151@{#1875}) on port 61675&#xD;
+Only local connections are allowed.&#xD;
+Please see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.&#xD;
+ChromeDriver was started successfully on port 61675.&#xD;
+[DIAG] Field values before submit: {"email":"tf@ipvc.pt","password":"Piruças123#"}&#xD;
+[DIAG] Screenshot before submit: screenshot_before_submit_20250615_223801_257.png, DOM: dom_before_submit_20250615_223801_257.html&#xD;
+[DIAG] Click intercepted on 'login' at 206,561 size 334x50&#xD;
+[DIAG] Screenshot: screenshot_login_20250615_223802_477.png, DOM: dom_login_20250615_223802_477.html&#xD;
+[DIAG] Current URL after form submission: http://localhost:5168/&#xD;
+[DIAG] Page source dumped to: page_after_login_20250615_223804_056.html&#xD;
+[DIAG] Redirected away from login page - login may have succeeded&#xD;
+&#xD;
+FiltrarPorTipo_ServerSide_FullPageReload: Server-side type filtering does a full postback; consider a dedicated controller test instead.&#xD;
+Starting ChromeDriver 137.0.7151.70 (dfa4dc56b2abb56eb2a14cad006ea5e68c60d5de-refs/branch-heads/7151@{#1875}) on port 61702&#xD;
+Only local connections are allowed.&#xD;
+Please see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.&#xD;
+ChromeDriver was started successfully on port 61702.&#xD;
+Test 'FiltrarPorTipo_ServerSide_FullPageReload' was skipped in the test run.&#xD;
+[DIAG] Field values before submit: {"email":"tf@ipvc.pt","password":"Piruças123#"}&#xD;
+[DIAG] Screenshot before submit: screenshot_before_submit_20250615_223806_846.png, DOM: dom_before_submit_20250615_223806_846.html&#xD;
+[DIAG] Click intercepted on 'login' at 206,561 size 334x50&#xD;
+[DIAG] Screenshot: screenshot_login_20250615_223807_994.png, DOM: dom_login_20250615_223807_994.html&#xD;
+[DIAG] Current URL after form submission: http://localhost:5168/&#xD;
+[DIAG] Page source dumped to: page_after_login_20250615_223809_415.html&#xD;
+[DIAG] Redirected away from login page - login may have succeeded&#xD;
+&#xD;
+Starting ChromeDriver 137.0.7151.70 (dfa4dc56b2abb56eb2a14cad006ea5e68c60d5de-refs/branch-heads/7151@{#1875}) on port 61728&#xD;
+Only local connections are allowed.&#xD;
+Please see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.&#xD;
+ChromeDriver was started successfully on port 61728.&#xD;
+[DIAG] Field values before submit: {"email":"tf@ipvc.pt","password":"Piruças123#"}&#xD;
+[DIAG] Screenshot before submit: screenshot_before_submit_20250615_223812_257.png, DOM: dom_before_submit_20250615_223812_257.html&#xD;
+[DIAG] Click intercepted on 'login' at 206,561 size 334x50&#xD;
+[DIAG] Screenshot: screenshot_login_20250615_223813_437.png, DOM: dom_login_20250615_223813_437.html&#xD;
+[DIAG] Current URL after form submission: http://localhost:5168/&#xD;
+[DIAG] Page source dumped to: page_after_login_20250615_223814_829.html&#xD;
+[DIAG] Redirected away from login page - login may have succeeded&#xD;
+&#xD;
+Starting ChromeDriver 137.0.7151.70 (dfa4dc56b2abb56eb2a14cad006ea5e68c60d5de-refs/branch-heads/7151@{#1875}) on port 61752&#xD;
+Only local connections are allowed.&#xD;
+Please see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.&#xD;
+ChromeDriver was started successfully on port 61752.&#xD;
+[DIAG] Field values before submit: {"email":"tf@ipvc.pt","password":"Piruças123#"}&#xD;
+[DIAG] Screenshot before submit: screenshot_before_submit_20250615_223816_949.png, DOM: dom_before_submit_20250615_223816_949.html&#xD;
+[DIAG] Click intercepted on 'login' at 206,561 size 334x50&#xD;
+[DIAG] Screenshot: screenshot_login_20250615_223818_127.png, DOM: dom_login_20250615_223818_127.html&#xD;
+[DIAG] Current URL after form submission: http://localhost:5168/&#xD;
+[DIAG] Page source dumped to: page_after_login_20250615_223819_407.html&#xD;
+[DIAG] Redirected away from login page - login may have succeeded&#xD;
+&#xD;
+Starting ChromeDriver 137.0.7151.70 (dfa4dc56b2abb56eb2a14cad006ea5e68c60d5de-refs/branch-heads/7151@{#1875}) on port 61779&#xD;
+Only local connections are allowed.&#xD;
+Please see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.&#xD;
+ChromeDriver was started successfully on port 61779.&#xD;
+Starting ChromeDriver 137.0.7151.70 (dfa4dc56b2abb56eb2a14cad006ea5e68c60d5de-refs/branch-heads/7151@{#1875}) on port 61801&#xD;
+Only local connections are allowed.&#xD;
+Please see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.&#xD;
+ChromeDriver was started successfully on port 61801.&#xD;
+[DIAG] Field values before submit: {"email":"tf@ipvc.pt","password":"Piruças123#"}&#xD;
+[DIAG] Screenshot before submit: screenshot_before_submit_20250615_223821_922.png, DOM: dom_before_submit_20250615_223821_922.html&#xD;
+[DIAG] Click intercepted on 'login' at 206,561 size 334x50&#xD;
+[DIAG] Screenshot: screenshot_login_20250615_223823_059.png, DOM: dom_login_20250615_223823_059.html&#xD;
+[DIAG] Current URL after form submission: http://localhost:5168/&#xD;
+[DIAG] Page source dumped to: page_after_login_20250615_223824_477.html&#xD;
+[DIAG] Redirected away from login page - login may have succeeded&#xD;
+[DIAG] [RegisterTest] Anti-forgery token on login page: CfDJ8IOgf__P4gJPpS9QBhgskkfqRloIzqqh-uHtvMi0NGRg3c90Rjhzd5UKjxRQCQdKItHBnY4pAX0qHln3bRB5xKtxgR4kfD3bM74JYBSDe3ao6WP66Ve7fBWoqjPBFsoKVJ-k2h3bgjubjJoHtvUYS9Q&#xD;
+[DIAG] [RegisterTest] Field values before submit: {"email":"ui638856239056715330@example.com","password":"Password123!"}&#xD;
+[DIAG] [RegisterTest] Screenshot before submit: C:\Users\tiagu\TrabES2\TrabalhoES2.UITests\bin\Debug\net9.0\TestResults\register_login_before_submit_20250615_223829_209.png, DOM: register_login_before_submit_20250615_223829_209.html&#xD;
+&#xD;
+Starting ChromeDriver 137.0.7151.70 (dfa4dc56b2abb56eb2a14cad006ea5e68c60d5de-refs/branch-heads/7151@{#1875}) on port 61829&#xD;
+Only local connections are allowed.&#xD;
+Please see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.&#xD;
+ChromeDriver was started successfully on port 61829.&#xD;
+Starting ChromeDriver 137.0.7151.70 (dfa4dc56b2abb56eb2a14cad006ea5e68c60d5de-refs/branch-heads/7151@{#1875}) on port 61852&#xD;
+Only local connections are allowed.&#xD;
+Please see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.&#xD;
+ChromeDriver was started successfully on port 61852.&#xD;
+NUnit Adapter 4.6.0.0: Test execution complete&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

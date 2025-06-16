@@ -23,6 +23,7 @@ public partial class Imovelarrendado
     [Display(Name = "Valor Anual de Despesas")]
     public decimal Valoranualdespesas { get; set; }
 
+    [Required]
     public int BancoId { get; set; }
 
     public int AtivofinanceiroId { get; set; }

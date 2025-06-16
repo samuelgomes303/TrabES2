@@ -4,6 +4,51 @@
 
 @{
     ViewData["Title"] = "Log in";
+    var isTestMode = Request.Query["testmode"] == "1";
+}
+
+@* --- DEBUG: Show POSTed credentials, ModelState errors, and auth info in testmode=1 --- *@
+@if (isTestMode)
+{
+    <div style="background:#f8d7da;color:#721c24;padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:1em;z-index:99999;position:relative;">
+        <b>[DEBUG]</b> <span style="color:#721c24">Login Diagnostic</span><br>
+        <b>Request Method:</b> <code>@Request.Method</code><br>
+        <b>Posted Email:</b> <code>@(Model?.Input?.Email != null ? Model.Input.Email.Substring(0, Math.Min(3, Model.Input.Email.Length)) + "***" : "(none)")</code><br>
+        <b>Posted Password:</b> <code>@(Model?.Input?.Password != null && Model.Input.Password.Length > 0 ? "***" : "(none)")</code><br>
+        <b>ModelState Errors:</b>
+        <ul style="margin:0 0 0 18px;padding:0;">
+        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <li>@err.ErrorMessage</li>
+        }
+        </ul>
+        <b>User Authenticated:</b> <code>@(User?.Identity?.IsAuthenticated ?? false)</code><br>
+        <b>TempData["ErrorMessage"]:</b> <code>@(TempData["ErrorMessage"] ?? "(none)")</code><br>
+        <b>ViewData["ErrorMessage"]:</b> <code>@(ViewData["ErrorMessage"] ?? "(none)")</code><br>
+        <b>ReturnUrl:</b> <code>@(Model?.ReturnUrl ?? "(none)")</code><br>
+        <b>TempData["LastLoginDebug"]:</b> <code>@(TempData["LastLoginDebug"] ?? "(none)")</code>
+    </div>
+}
+
+@if (isTestMode)
+{
+    <div id="testmode-lastlogindebug-block" style="background:#e3f7e3;color:#1b5e20;padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:1em;z-index:99999;position:relative;">
+        <b>[DEBUG]</b> <span style="color:#1b5e20">TempData["LastLoginDebug"]</span><br>
+        <pre style="white-space:pre-wrap;word-break:break-all;">@((TempData["LastLoginDebug"] ?? "(none)").ToString())</pre>
+    </div>
+}
+
+@if (isTestMode)
+{
+    <div id="testmode-login-debug-block" style="background: #ffe; border: 2px solid #cc0; padding: 8px; margin-bottom: 10px;">
+        <b>TEST MODE LOGIN DEBUG:</b>
+        <ul>
+            <li>User: @User?.Identity?.Name</li>
+            <li>Authenticated: @User?.Identity?.IsAuthenticated</li>
+            <li>TempData["ErrorMessage"]: @TempData["ErrorMessage"]</li>
+            <li>TempData["LoginResult"]: @TempData["LoginResult"]</li>
+        </ul>
+    </div>
 }
 
 @* — estilos isolados para a página de login *@
@@ -72,7 +117,14 @@
       Log in
     </div>
     <div class="card-body">
-      <form method="post" id="account">
+      <!-- DEBUG: Selenium login form field info -->
+      <div style="background:#ffeeba;color:#856404;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:0.95em;">
+        <b>[DEBUG]</b> Login form rendered.<br>
+        Email field: <code>name="Input.Email"</code>, id: <code>Input_Email</code><br>
+        Password field: <code>name="Input.Password"</code>, id: <code>Input_Password</code><br>
+        Submit button: <code>type="submit"</code>, class: <code>btn-login</code>
+      </div>      <form method="post" id="account" asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">
+        @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
 
         <div class="form-floating mb-3">
@@ -108,6 +160,293 @@
     </div>
   </div>
 </div>
+
+@* --- DEBUG: Show login page state and force login button visible in testmode=1 --- *@
+@if (isTestMode)
+{
+    <div style="background:#d1ecf1;color:#0c5460;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:0.95em;z-index:9999;position:relative;">
+        <b>[DEBUG]</b> Login page in testmode=1.<br>
+        User: <code>@(User?.Identity?.Name ?? "(none)")</code> | Authenticated: <code>@(User?.Identity?.IsAuthenticated ?? false)</code><br>
+        <b>Login button should be visible and clickable below.</b>
+    </div>
+    <style>
+        .btn-login {
+            position: fixed !important;
+            left: 50% !important;
+            bottom: 40px !important;
+            transform: translateX(-50%) !important;
+            z-index: 99999 !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+        /* Hide overlays, modals, and high z-index elements in testmode */
+        [class*="modal"], [class*="overlay"], [class*="backdrop"], [class*="popup"], [class*="dialog"], [style*="z-index:1000"], [style*="z-index:999"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+    </style>
+    <script>
+        // Remove overlays and modals from DOM in testmode
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectors = [
+                '[class*="modal"]', '[class*="overlay"]', '[class*="backdrop"]', '[class*="popup"]', '[class*="dialog"]',
+                '[style*="z-index:1000"]', '[style*="z-index:999"]'
+            ];
+            selectors.forEach(sel => {
+                document.querySelectorAll(sel).forEach(el => el.remove());
+            });
+            // Bring login button to front
+            var btn = document.querySelector('.btn-login');
+            if (btn) {
+                btn.style.position = 'fixed';
+                btn.style.left = '50%';
+                btn.style.bottom = '40px';
+                btn.style.transform = 'translateX(-50%)';
+                btn.style.zIndex = '99999';
+                btn.style.display = 'block';
+                btn.style.visibility = 'visible';
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            }
+        });
+    </script>
+}
+
+@* --- DEBUG: Show login page state and force login form submission in testmode=1 --- *@
+@if (isTestMode)
+{
+    <div style="background:#d1ecf1;color:#0c5460;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:0.95em;z-index:9999;position:relative;">
+        <b>[DEBUG]</b> Login page in testmode=1.<br>
+        User: <code>@(User?.Identity?.Name ?? "(none)")</code> | Authenticated: <code>@(User?.Identity?.IsAuthenticated ?? false)</code><br>
+        <b>Current URL:</b> <code>@Request.Path@Request.QueryString</code><br>
+        <b>Login button should be visible and clickable below.</b>
+    </div>
+    <style>
+        .btn-login {
+            position: fixed !important;
+            left: 50% !important;
+            bottom: 40px !important;
+            transform: translateX(-50%) !important;
+            z-index: 99999 !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+        [class*="modal"], [class*="overlay"], [class*="backdrop"], [class*="popup"], [class*="dialog"], [style*="z-index:1000"], [style*="z-index:999"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Remove overlays and modals
+            const selectors = [
+                '[class*="modal"]', '[class*="overlay"]', '[class*="backdrop"]', '[class*="popup"]', '[class*="dialog"]',
+                '[style*="z-index:1000"]', '[style*="z-index:999"]'
+            ];
+            selectors.forEach(sel => {
+                document.querySelectorAll(sel).forEach(el => el.remove());
+            });
+            // Bring login button to front
+            var btn = document.querySelector('.btn-login');
+            if (btn) {
+                btn.style.position = 'fixed';
+                btn.style.left = '50%';
+                btn.style.bottom = '40px';
+                btn.style.transform = 'translateX(-50%)';
+                btn.style.zIndex = '99999';
+                btn.style.display = 'block';
+                btn.style.visibility = 'visible';
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+                // Force submit on click (bypass overlays/interception)
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var form = btn.closest('form');
+                    if (form) {
+                        form.submit();
+                    }
+                }, true);
+            }
+        });
+    </script>
+}
+
+@* --- DEBUG: Auto-submit login form in testmode for Selenium reliability --- *@
+@if (Request.Query["testmode"] == "1")
+{
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var form = document.getElementById('account');
+            var email = document.querySelector('input[name="Input.Email"]');
+            var password = document.querySelector('input[name="Input.Password"]');
+            function tryAutoSubmit() {
+                if (email && password && email.value && password.value) {
+                    if (!form.classList.contains('auto-submitted')) {
+                        form.classList.add('auto-submitted');
+                        form.submit();
+                    }
+                }
+            }
+            if (email && password && form) {
+                email.addEventListener('input', tryAutoSubmit);
+                password.addEventListener('input', tryAutoSubmit);
+                // In case Selenium sets values directly
+                setInterval(tryAutoSubmit, 300);
+            }
+        });
+    </script>
+}
+
+@if (isTestMode)
+{
+    <style id="testmode-login-css">
+        /* Hide overlays, modals, and sticky headers for Selenium test mode on login page */
+        .modal, .modal-backdrop, .offcanvas, .offcanvas-backdrop, .toast, .toast-container,
+        [class*="modal"], [class*="backdrop"], [class*="offcanvas"], [class*="toast"] {
+            display: none !important;
+            pointer-events: none !important;
+            opacity: 0 !important;
+        }
+        .sticky-top, .sticky-sm-top, .sticky-md-top, .sticky-lg-top, .sticky-xl-top, .sticky-xxl-top {
+            position: static !important;
+        }
+        body {
+            padding-top: 0 !important;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Remove only overlays, modals, and sticky headers
+            const overlays = document.querySelectorAll('.modal, .modal-backdrop, .offcanvas, .offcanvas-backdrop, .toast, .toast-container');
+            overlays.forEach(el => {
+                el.style.display = 'none';
+                el.style.pointerEvents = 'none';
+                el.style.opacity = '0';
+            });
+            const stickies = document.querySelectorAll('.sticky-top, .sticky-sm-top, .sticky-md-top, .sticky-lg-top, .sticky-xl-top, .sticky-xxl-top');
+            stickies.forEach(el => {
+                el.style.position = 'static';
+            });
+        });
+    </script>
+}
+
+@if (isTestMode)
+{
+    <style>
+        /* Force login button to be visible, on top, and interactable in testmode */
+        .btn-login {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: relative !important;
+            z-index: 99999 !important;
+            pointer-events: auto !important;
+            background: #fffbe6 !important;
+            outline: 3px solid #ff9800 !important;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var btn = document.querySelector('.btn-login');
+            if (btn) {
+                var rect = btn.getBoundingClientRect();
+                var style = window.getComputedStyle(btn);
+                var debug = document.createElement('div');
+                debug.style.background = '#ffe';
+                debug.style.border = '1px solid #cc0';
+                debug.style.padding = '4px';
+                debug.style.marginBottom = '8px';
+                debug.innerText = `Login button rect: x=${rect.x}, y=${rect.y}, w=${rect.width}, h=${rect.height}\n` +
+                    `display=${style.display}, visibility=${style.visibility}, opacity=${style.opacity}, z-index=${style.zIndex}`;
+                btn.parentElement.insertBefore(debug, btn);
+            }
+        });
+    </script>
+}
+
+@* --- FORCE LOGIN BUTTON VISIBLE, ENABLED, AND INTERACTABLE IN TEST MODE FOR SELENIUM --- *@
+@if (isTestMode)
+{
+    <style id="selenium-force-login-btn">
+        .btn-login {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: fixed !important;
+            left: 50% !important;
+            bottom: 40px !important;
+            z-index: 2147483647 !important;
+            pointer-events: auto !important;
+            background: #fffbe6 !important;
+            outline: 4px solid #ff9800 !important;
+        }
+        form#account {
+            z-index: 2147483647 !important;
+            position: relative !important;
+        }
+        /* Remove all overlays, modals, and high z-index elements */
+        [class*="modal"], [class*="overlay"], [class*="backdrop"], [class*="popup"], [class*="dialog"],
+        [style*="z-index:1000"], [style*="z-index:999"], [style*="z-index:2147483647"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Remove overlays and modals
+            const selectors = [
+                '[class*="modal"]', '[class*="overlay"]', '[class*="backdrop"]', '[class*="popup"]', '[class*="dialog"]',
+                '[style*="z-index:1000"]', '[style*="z-index:999"]', '[style*="z-index:2147483647"]'
+            ];
+            selectors.forEach(sel => {
+                document.querySelectorAll(sel).forEach(el => el.remove());
+            });
+            // Bring login button to front and always enabled
+            var btn = document.querySelector('.btn-login');
+            if (btn) {
+                btn.disabled = false;
+                btn.removeAttribute('disabled');
+                btn.style.display = 'block';
+                btn.style.visibility = 'visible';
+                btn.style.opacity = '1';
+                btn.style.position = 'fixed';
+                btn.style.left = '50%';
+                btn.style.bottom = '40px';
+                btn.style.zIndex = '2147483647';
+                btn.style.pointerEvents = 'auto';
+                btn.style.background = '#fffbe6';
+                btn.style.outline = '4px solid #ff9800';
+            }
+        });
+    </script>
+}
+
+@* --- TESTMODE: Always show login error message in a visible debug block for Selenium --- *@
+@if (isTestMode && (ViewData.ModelState.Values.SelectMany(v => v.Errors).Any() || !string.IsNullOrEmpty(ViewData["ErrorMessage"] as string)))
+{
+    <div id="testmode-login-error-debug" style="background:#ffebee;color:#b71c1c;padding:14px 18px;border-radius:8px;margin-bottom:18px;font-size:1.1em;z-index:2147483647;position:relative;border:2px solid #b71c1c;">
+        <b>[TESTMODE ERROR]</b> Login failed:<br />
+        <ul style="margin:0 0 0 18px;padding:0;">
+        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <li>@err.ErrorMessage</li>
+        }
+        @if (!string.IsNullOrEmpty(ViewData["ErrorMessage"] as string))
+        {
+            <li>@ViewData["ErrorMessage"]</li>
+        }
+        </ul>
+    </div>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

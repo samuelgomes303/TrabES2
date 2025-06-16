@@ -10,6 +10,7 @@ public partial class Depositoprazo
 
     public decimal Valorinicial { get; set; }
 
+    [Required]
     public int BancoId { get; set; }
 
     public string Nrconta { get; set; } = null!;
